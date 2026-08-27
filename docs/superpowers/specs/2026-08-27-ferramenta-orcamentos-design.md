@@ -32,6 +32,9 @@ atual.
 - Papel de administrador com acesso total (orçamentos de todos, gestão de
   consultores, catálogo e faixas de pagamento).
 - Duas oficinas com identidade própria (nome, endereço, telefone, logo).
+- Calculadora avulsa de condição de pagamento (sem cliente/veículo/orçamento),
+  para o consultor ir direto ao ponto quando não precisa montar um orçamento
+  completo.
 
 ### Fora do escopo (não construir nesta versão)
 - Consulta automática de preço no site do distribuidor pela placa.
@@ -133,6 +136,29 @@ são calculados e exibidos — não apenas o texto da regra.
 
 Faixas e percentuais são editáveis pelo admin via painel (sem alterar
 código); os valores acima são a carga inicial dos dados.
+
+## Calculadora de condição de pagamento (avulsa)
+
+Ferramenta separada dentro do mesmo app (atrás do mesmo login), sem vínculo
+com cliente, veículo ou orçamento — não gera nenhum registro salvo. Serve
+para o consultor consultar rapidamente a condição de pagamento sem passar
+pela montagem de um orçamento completo.
+
+- Campo **Valor do serviço** (digitação livre).
+- Campo **Valor de entrada**, sincronizado com uma barra deslizante que vai
+  de **30% a 100%** do valor do serviço — arrastar a barra atualiza o campo
+  em R$, e digitar o valor atualiza a barra/percentual.
+- Exibe: valor e percentual da entrada, saldo restante, e "Máx. parcelas"
+  calculado sobre o valor do serviço usando a mesma tabela `faixas_pagamento`
+  do orçamento (fonte única da regra, sem lógica duplicada).
+- **Opções de pagamento do saldo:** lista de 1x (rotulado "à vista") até o
+  máximo de parcelas da faixa, sem juros no crédito.
+- **Alternativa cartão Porto:** até 6x sem juros, parcela mínima de R$100,
+  mesma regra do orçamento completo.
+- **Quando a entrada chega a 100%:** zera as opções de parcelamento do saldo
+  (saldo = R$0) e destaca "Pagamento total via Pix/Débito: R$X (5% de
+  desconto)".
+- Sem geração de PDF e sem mensagem de WhatsApp — é só consulta na tela.
 
 ## PDF
 
