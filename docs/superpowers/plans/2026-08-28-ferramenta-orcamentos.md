@@ -500,42 +500,18 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 **Files:**
 - Create: `src/lib/types.ts`
 - Create: `src/lib/supabase/client.ts`
-- Create: `src/lib/supabase/server.ts`
 - Create: `src/lib/supabase/admin.ts`
-- Test: `src/lib/types.test.ts`
+- Create: `src/lib/supabase/server.ts`
+- Test: `src/lib/supabase/client.test.ts`
+- Test: `src/lib/supabase/admin.test.ts`
 
 **Interfaces:**
 - Consumes: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` env vars.
 - Produces: domain types `Oficina`, `Consultor`, `CatalogoItem`, `FaixaPagamento`, `ConfiguracaoPagamento`, `StatusOrcamento`, `Orcamento`, `OrcamentoItem` in `src/lib/types.ts`; `createBrowserClient()` in `src/lib/supabase/client.ts`; `createServerClient()` in `src/lib/supabase/server.ts`; `createAdminClient()` in `src/lib/supabase/admin.ts`.
 
-- [ ] **Step 1: Write the failing test for the type guard helper**
+`types.ts` is pure type declarations with no runtime behavior of its own, so it has no dedicated unit test — it's implicitly verified by every later task's test suite (which imports these types) and by `npm run build`'s type-check. The two client factories below DO have runtime behavior (reading env vars, calling the underlying SDK factory), so they get real tests.
 
-`src/lib/types.test.ts`:
-```ts
-import { describe, it, expect } from 'vitest';
-import { isStatusOrcamento } from './types';
-
-describe('isStatusOrcamento', () => {
-  it('aceita os quatro status válidos', () => {
-    expect(isStatusOrcamento('rascunho')).toBe(true);
-    expect(isStatusOrcamento('enviado')).toBe(true);
-    expect(isStatusOrcamento('aprovado')).toBe(true);
-    expect(isStatusOrcamento('recusado')).toBe(true);
-  });
-
-  it('rejeita valores inválidos', () => {
-    expect(isStatusOrcamento('cancelado')).toBe(false);
-    expect(isStatusOrcamento('')).toBe(false);
-  });
-});
-```
-
-- [ ] **Step 2: Run the test and verify it fails**
-
-Run: `npm test -- types.test.ts`
-Expected: FAIL — `isStatusOrcamento` is not exported.
-
-- [ ] **Step 3: Write `src/lib/types.ts`**
+- [ ] **Step 1: Write `src/lib/types.ts`**
 
 ```ts
 export interface Oficina {
@@ -578,12 +554,7 @@ export interface ConfiguracaoPagamento {
   cartaoPortoParcelaMinimaCentavos: number;
 }
 
-export const STATUS_ORCAMENTO = ['rascunho', 'enviado', 'aprovado', 'recusado'] as const;
-export type StatusOrcamento = (typeof STATUS_ORCAMENTO)[number];
-
-export function isStatusOrcamento(valor: string): valor is StatusOrcamento {
-  return (STATUS_ORCAMENTO as readonly string[]).includes(valor);
-}
+export type StatusOrcamento = 'rascunho' | 'enviado' | 'aprovado' | 'recusado';
 
 export interface Orcamento {
   id: string;
@@ -610,12 +581,37 @@ export interface OrcamentoItem {
 }
 ```
 
-- [ ] **Step 4: Run the test and verify it passes**
+- [ ] **Step 2: Write the failing test for `createBrowserClient`**
 
-Run: `npm test -- types.test.ts`
-Expected: PASS (2 tests).
+`src/lib/supabase/client.test.ts`:
+```ts
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-- [ ] **Step 5: Write `src/lib/supabase/client.ts`**
+const createBrowserClientMock = vi.fn().mockReturnValue({ mocked: 'browser-client' });
+vi.mock('@supabase/ssr', () => ({ createBrowserClient: createBrowserClientMock }));
+
+describe('createBrowserClient', () => {
+  beforeEach(() => {
+    createBrowserClientMock.mockClear();
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon-key';
+  });
+
+  it('cria o cliente usando a URL e a chave anônima do ambiente', async () => {
+    const { createBrowserClient } = await import('./client');
+    const cliente = createBrowserClient();
+    expect(createBrowserClientMock).toHaveBeenCalledWith('https://example.supabase.co', 'anon-key');
+    expect(cliente).toEqual({ mocked: 'browser-client' });
+  });
+});
+```
+
+- [ ] **Step 3: Run the test and verify it fails**
+
+Run: `npm test -- supabase/client.test.ts`
+Expected: FAIL — module `./client` does not exist.
+
+- [ ] **Step 4: Implement `src/lib/supabase/client.ts`**
 
 ```ts
 import { createBrowserClient as createSupabaseBrowserClient } from '@supabase/ssr';
@@ -628,7 +624,65 @@ export function createBrowserClient() {
 }
 ```
 
-- [ ] **Step 6: Write `src/lib/supabase/server.ts`**
+- [ ] **Step 5: Run the test and verify it passes**
+
+Run: `npm test -- supabase/client.test.ts`
+Expected: PASS (1 test).
+
+- [ ] **Step 6: Write the failing test for `createAdminClient`**
+
+`src/lib/supabase/admin.test.ts`:
+```ts
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const createClientMock = vi.fn().mockReturnValue({ mocked: 'admin-client' });
+vi.mock('@supabase/supabase-js', () => ({ createClient: createClientMock }));
+
+describe('createAdminClient', () => {
+  beforeEach(() => {
+    createClientMock.mockClear();
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
+  });
+
+  it('cria o cliente usando a service role key, sem persistir sessão', async () => {
+    const { createAdminClient } = await import('./admin');
+    const cliente = createAdminClient();
+    expect(createClientMock).toHaveBeenCalledWith('https://example.supabase.co', 'service-role-key', {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    expect(cliente).toEqual({ mocked: 'admin-client' });
+  });
+});
+```
+
+- [ ] **Step 7: Run the test and verify it fails**
+
+Run: `npm test -- supabase/admin.test.ts`
+Expected: FAIL — module `./admin` does not exist.
+
+- [ ] **Step 8: Implement `src/lib/supabase/admin.ts`**
+
+```ts
+import { createClient } from '@supabase/supabase-js';
+
+// Server-only: uses the service role key, which bypasses RLS.
+// Never import this file from a Client Component.
+export function createAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
+```
+
+- [ ] **Step 9: Run the test and verify it passes**
+
+Run: `npm test -- supabase/admin.test.ts`
+Expected: PASS (1 test).
+
+- [ ] **Step 10: Implement `src/lib/supabase/server.ts`** (no dedicated test — it wraps `next/headers`' request-scoped `cookies()`, which only exists inside a real Next.js request; every later task that uses it mocks this module directly, and `npm run build` catches type errors)
 
 ```ts
 import { createServerClient as createSupabaseServerClient } from '@supabase/ssr';
@@ -653,31 +707,15 @@ export async function createServerClient() {
 }
 ```
 
-- [ ] **Step 7: Write `src/lib/supabase/admin.ts`**
-
-```ts
-import { createClient } from '@supabase/supabase-js';
-
-// Server-only: uses the service role key, which bypasses RLS.
-// Never import this file from a Client Component.
-export function createAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-}
-```
-
-- [ ] **Step 8: Verify the project still builds**
+- [ ] **Step 11: Verify the project still builds**
 
 Run: `npm run build`
 Expected: build succeeds.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 12: Commit**
 
 ```bash
-git add src/lib/types.ts src/lib/types.test.ts src/lib/supabase/
+git add src/lib/types.ts src/lib/supabase/
 git commit -m "feat: add domain types and typed Supabase clients
 
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
@@ -1775,9 +1813,11 @@ vi.mock('@/lib/supabase/client', () => ({ createBrowserClient: () => ({}) }));
 
 const criarOficinaMock = vi.fn();
 const atualizarOficinaMock = vi.fn();
+const enviarLogoOficinaMock = vi.fn();
 vi.mock('@/lib/oficinas/data', () => ({
   criarOficina: (...args: unknown[]) => criarOficinaMock(...args),
   atualizarOficina: (...args: unknown[]) => atualizarOficinaMock(...args),
+  enviarLogoOficina: (...args: unknown[]) => enviarLogoOficinaMock(...args),
 }));
 
 const oficinaExistente = { id: '1', nome: 'Top Stop Centro', endereco: 'Rua A', telefone: '11999999999', logoUrl: null };
@@ -1786,6 +1826,7 @@ describe('OficinasManager', () => {
   beforeEach(() => {
     criarOficinaMock.mockReset();
     atualizarOficinaMock.mockReset();
+    enviarLogoOficinaMock.mockReset();
   });
 
   it('lista as oficinas recebidas', () => {
@@ -1803,6 +1844,7 @@ describe('OficinasManager', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(screen.getByText('Top Stop Norte')).toBeInTheDocument());
+    expect(enviarLogoOficinaMock).not.toHaveBeenCalled();
   });
 
   it('mostra erro quando a criação falha', async () => {
@@ -1815,6 +1857,29 @@ describe('OficinasManager', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('falhou'));
+  });
+
+  it('envia o logo depois de criar a oficina, quando um arquivo é escolhido', async () => {
+    const arquivo = new File(['conteudo'], 'logo.png', { type: 'image/png' });
+    criarOficinaMock.mockResolvedValue({ id: '2', nome: 'Top Stop Norte', endereco: 'Rua B', telefone: '11888888888', logoUrl: null });
+    enviarLogoOficinaMock.mockResolvedValue('https://storage.example/logos/2/logo.png');
+    atualizarOficinaMock.mockResolvedValue({ id: '2', nome: 'Top Stop Norte', endereco: 'Rua B', telefone: '11888888888', logoUrl: 'https://storage.example/logos/2/logo.png' });
+
+    render(<OficinasManager oficinasIniciais={[]} />);
+
+    fireEvent.change(screen.getByPlaceholderText('Nome'), { target: { value: 'Top Stop Norte' } });
+    fireEvent.change(screen.getByPlaceholderText('Endereço'), { target: { value: 'Rua B' } });
+    fireEvent.change(screen.getByPlaceholderText('Telefone'), { target: { value: '11888888888' } });
+    fireEvent.change(screen.getByLabelText('Logo (opcional)'), { target: { files: [arquivo] } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    await waitFor(() => expect(enviarLogoOficinaMock).toHaveBeenCalledWith({}, '2', arquivo));
+    expect(atualizarOficinaMock).toHaveBeenCalledWith({}, '2', {
+      nome: 'Top Stop Norte',
+      endereco: 'Rua B',
+      telefone: '11888888888',
+      logoUrl: 'https://storage.example/logos/2/logo.png',
+    });
   });
 });
 ```
@@ -1831,7 +1896,7 @@ Expected: FAIL — module `./OficinasManager` does not exist.
 
 import { useState, type FormEvent } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
-import { criarOficina, atualizarOficina } from '@/lib/oficinas/data';
+import { criarOficina, atualizarOficina, enviarLogoOficina } from '@/lib/oficinas/data';
 import type { Oficina } from '@/lib/types';
 
 export function OficinasManager({ oficinasIniciais }: { oficinasIniciais: Oficina[] }) {
@@ -1840,6 +1905,7 @@ export function OficinasManager({ oficinasIniciais }: { oficinasIniciais: Oficin
   const [nome, setNome] = useState('');
   const [endereco, setEndereco] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [arquivoLogo, setArquivoLogo] = useState<File | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
   function iniciarEdicao(oficina: Oficina | null) {
@@ -1847,6 +1913,7 @@ export function OficinasManager({ oficinasIniciais }: { oficinasIniciais: Oficin
     setNome(oficina?.nome ?? '');
     setEndereco(oficina?.endereco ?? '');
     setTelefone(oficina?.telefone ?? '');
+    setArquivoLogo(null);
     setErro(null);
   }
 
@@ -1855,13 +1922,21 @@ export function OficinasManager({ oficinasIniciais }: { oficinasIniciais: Oficin
     setErro(null);
     const supabase = createBrowserClient();
     try {
+      let oficinaSalva: Oficina;
       if (editando) {
-        const atualizada = await atualizarOficina(supabase, editando.id, { nome, endereco, telefone });
-        setOficinas((atuais) => atuais.map((o) => (o.id === atualizada.id ? atualizada : o)));
+        oficinaSalva = await atualizarOficina(supabase, editando.id, { nome, endereco, telefone });
       } else {
-        const criada = await criarOficina(supabase, { nome, endereco, telefone });
-        setOficinas((atuais) => [...atuais, criada]);
+        oficinaSalva = await criarOficina(supabase, { nome, endereco, telefone });
       }
+
+      if (arquivoLogo) {
+        const logoUrl = await enviarLogoOficina(supabase, oficinaSalva.id, arquivoLogo);
+        oficinaSalva = await atualizarOficina(supabase, oficinaSalva.id, { nome, endereco, telefone, logoUrl });
+      }
+
+      setOficinas((atuais) =>
+        editando ? atuais.map((o) => (o.id === oficinaSalva.id ? oficinaSalva : o)) : [...atuais, oficinaSalva]
+      );
       iniciarEdicao(null);
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Erro desconhecido');
@@ -1900,6 +1975,22 @@ export function OficinasManager({ oficinasIniciais }: { oficinasIniciais: Oficin
         <input placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} required className="w-full rounded border px-2 py-1" />
         <input placeholder="Endereço" value={endereco} onChange={(e) => setEndereco(e.target.value)} required className="w-full rounded border px-2 py-1" />
         <input placeholder="Telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)} required className="w-full rounded border px-2 py-1" />
+        <div>
+          <label className="block text-sm" htmlFor="logo-oficina">
+            Logo (opcional)
+          </label>
+          {editando?.logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={editando.logoUrl} alt={`Logo atual de ${editando.nome}`} className="mb-1 h-12 w-12 object-contain" />
+          )}
+          <input
+            id="logo-oficina"
+            type="file"
+            accept="image/*"
+            onChange={(e) => setArquivoLogo(e.target.files?.[0] ?? null)}
+            className="w-full text-sm"
+          />
+        </div>
         {erro && (
           <p role="alert" className="text-sm text-red-600">
             {erro}
@@ -1924,7 +2015,7 @@ export function OficinasManager({ oficinasIniciais }: { oficinasIniciais: Oficin
 - [ ] **Step 9: Run the tests and verify they pass**
 
 Run: `npm test -- OficinasManager.test.tsx`
-Expected: PASS (3 tests).
+Expected: PASS (4 tests).
 
 - [ ] **Step 10: Implement `src/app/(app)/admin/oficinas/page.tsx`**
 
