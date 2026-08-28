@@ -1,5 +1,6 @@
 create function is_admin() returns boolean
 language sql security definer stable
+set search_path = public
 as $$
   select exists (
     select 1 from consultores
@@ -9,8 +10,9 @@ $$;
 
 create function current_consultor_id() returns uuid
 language sql security definer stable
+set search_path = public
 as $$
-  select id from consultores where auth_user_id = auth.uid();
+  select id from consultores where auth_user_id = auth.uid() and ativo = true;
 $$;
 
 alter table oficinas enable row level security;
