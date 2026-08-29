@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { OrcamentoForm, type DadosOrcamentoFormulario } from '@/components/orcamento/OrcamentoForm';
 import { salvarEdicaoOrcamento, mudarStatusOrcamento } from '@/lib/orcamento/actions';
 import type { CatalogoItem, FaixaPagamento, ConfiguracaoPagamento, Orcamento, OrcamentoItem, StatusOrcamento } from '@/lib/types';
@@ -75,6 +76,9 @@ export function OrcamentoDetalheClient({
         </p>
       )}
       <OrcamentoForm catalogo={catalogo} faixas={faixas} config={config} valoresIniciais={valoresIniciais} aoSalvar={aoSalvar} />
+      <Link href={`/orcamentos/${orcamento.id}/pdf`} target="_blank" rel="noreferrer" className="inline-block rounded border px-3 py-1 text-sm">
+        Baixar PDF
+      </Link>
     </div>
   );
 }

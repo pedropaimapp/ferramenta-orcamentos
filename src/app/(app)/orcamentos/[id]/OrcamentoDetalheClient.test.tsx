@@ -59,4 +59,9 @@ describe('OrcamentoDetalheClient', () => {
 
     await waitFor(() => expect(salvarEdicaoOrcamentoMock).toHaveBeenCalledWith('o1', expect.objectContaining({ clienteNome: 'Maria' })));
   });
+
+  it('mostra um link para baixar o PDF do orçamento', () => {
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} />);
+    expect(screen.getByRole('link', { name: 'Baixar PDF' })).toHaveAttribute('href', '/orcamentos/o1/pdf');
+  });
 });
