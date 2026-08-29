@@ -1,20 +1,20 @@
 // Renders the orçamento PDF in a plain, un-bundled Node process.
 //
 // Why this exists: Next.js 15's App Router compiles every file reachable from a
-// route handler (route.tsx and everything it imports, including
-// src/components/pdf/OrcamentoPdfDocument.tsx) against its own internally
-// vendored React copy (a React 19 canary), regardless of the project's installed
-// React version (18.3.1). @react-pdf/renderer's reconciler is built against real
-// React 18 semantics, so an element created by Next's vendored React fails its
-// validity check and every render throws "Minified React error #31". Running
-// entirely in a separate `node` process sidesteps Next's webpack bundling (and
-// its react-19-canary substitution) altogether: this script resolves 'react' and
-// '@react-pdf/renderer' the normal way, straight from node_modules.
+// route handler against its own internally vendored React copy (a React 19
+// canary), regardless of the project's installed React version (18.3.1).
+// @react-pdf/renderer's reconciler is built against real React 18 semantics, so
+// an element created by Next's vendored React fails its validity check and
+// every render throws "Minified React error #31". Running entirely in a
+// separate `node` process sidesteps Next's webpack bundling (and its
+// react-19-canary substitution) altogether: this script resolves 'react' and
+// '@react-pdf/renderer' the normal way, straight from node_modules. This is
+// the only place the PDF layout is defined — plain React.createElement, no
+// JSX/TS, so it needs zero build step to run.
 //
-// Keep the visual structure here in sync with src/components/pdf/OrcamentoPdfDocument.tsx
-// (which stays the source of truth exercised by
-// src/components/pdf/OrcamentoPdfDocument.test.tsx) — this file duplicates it using
-// React.createElement because it must run with zero build step (no JSX, no TS).
+// Also note: pdfkit's built-in fonts (Helvetica here) only support WinAnsi
+// encoding — stick to Latin-1 characters (Portuguese accents are fine) and
+// avoid symbols like "→"; they render as garbled glyphs instead of throwing.
 //
 // Protocol: reads one JSON payload from stdin (see the `Payload` shape mirrored
 // below), writes the resulting PDF as raw bytes to stdout. Any error is reported
@@ -106,7 +106,7 @@ function orcamentoPdfDocument({ oficina, consultorNome, orcamento, itens, totalC
         e(
           Text,
           { style: styles.linha },
-          `Desconto à vista no Pix/Débito: ${formatarReais(desconto.descontoCentavos)} → ${formatarReais(desconto.valorComDescontoCentavos)}`
+          `Desconto à vista no Pix/Débito: ${formatarReais(desconto.descontoCentavos)} -> ${formatarReais(desconto.valorComDescontoCentavos)}`
         ),
         e(
           Text,
