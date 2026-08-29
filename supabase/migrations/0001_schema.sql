@@ -37,9 +37,9 @@ create table faixas_pagamento (
 
 create table configuracao_pagamento (
   id integer primary key default 1,
-  percentual_entrada_minima numeric(4,3) not null default 0.300,
-  percentual_desconto_avista numeric(4,3) not null default 0.050,
-  cartao_porto_max_parcelas integer not null default 6,
+  percentual_entrada_minima numeric(4,3) not null default 0.300 check (percentual_entrada_minima >= 0 and percentual_entrada_minima <= 1),
+  percentual_desconto_avista numeric(4,3) not null default 0.050 check (percentual_desconto_avista >= 0 and percentual_desconto_avista <= 1),
+  cartao_porto_max_parcelas integer not null default 6 check (cartao_porto_max_parcelas > 0),
   cartao_porto_parcela_minima_centavos integer not null default 10000,
   updated_at timestamptz not null default now(),
   constraint configuracao_pagamento_singleton check (id = 1)
@@ -62,7 +62,7 @@ create table orcamentos (
 create table orcamento_itens (
   id uuid primary key default gen_random_uuid(),
   orcamento_id uuid not null references orcamentos(id) on delete cascade,
-  catalogo_item_id uuid references catalogo_itens(id),
+  catalogo_item_id uuid references catalogo_itens(id) on delete set null,
   descricao text not null,
   tipo text not null check (tipo in ('peca', 'servico')),
   quantidade integer not null check (quantidade > 0),

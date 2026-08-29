@@ -43,4 +43,26 @@ describe('ItemForm', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Quantidade deve ser maior que zero');
     expect(onAdicionar).not.toHaveBeenCalled();
   });
+
+  it('mostra erro e não chama onAdicionar quando a quantidade não é um número (NaN)', () => {
+    const onAdicionar = vi.fn();
+    render(<ItemForm catalogo={[]} onAdicionar={onAdicionar} />);
+
+    fireEvent.change(screen.getByPlaceholderText('Descrição'), { target: { value: 'Item' } });
+
+    // A native `type="number"` input sanitizes any assigned invalid string down
+    // to an empty value, so it can't carry a NaN-producing string through a
+    // normal fireEvent.change. To exercise the defense-in-depth NaN guard we
+    // bypass that sanitization by overriding the element's `value` property
+    // directly, simulating a non-numeric value reaching React's change handler.
+    const quantidadeInput = screen.getByPlaceholderText('Quantidade') as HTMLInputElement;
+    Object.defineProperty(quantidadeInput, 'value', { value: 'abc', configurable: true });
+    fireEvent.change(quantidadeInput);
+
+    fireEvent.change(screen.getByPlaceholderText('Valor unitário (R$)'), { target: { value: '10,00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar item' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Quantidade deve ser maior que zero');
+    expect(onAdicionar).not.toHaveBeenCalled();
+  });
 });

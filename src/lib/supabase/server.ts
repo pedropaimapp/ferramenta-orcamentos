@@ -10,9 +10,16 @@ export async function createServerClient() {
       cookies: {
         getAll: () => cookieStore.getAll(),
         setAll: (cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) => {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // `setAll` is called from a Server Component during render, where
+            // Next.js does not allow writing cookies. This is safe to ignore
+            // because `middleware.ts` refreshes the session and writes the
+            // rotated cookies on every request that needs it.
+          }
         },
       },
     }

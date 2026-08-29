@@ -11,7 +11,7 @@ interface ConsultorRow {
   ativo: boolean;
 }
 
-function mapConsultor(row: ConsultorRow): Consultor {
+export function mapConsultor(row: ConsultorRow): Consultor {
   return {
     id: row.id,
     authUserId: row.auth_user_id,

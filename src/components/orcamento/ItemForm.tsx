@@ -38,7 +38,7 @@ export function ItemForm({ catalogo, onAdicionar }: { catalogo: CatalogoItem[]; 
     try {
       if (!descricao.trim()) throw new Error('Descrição é obrigatória');
       const quantidadeNumero = Number(quantidade);
-      if (quantidadeNumero <= 0) throw new Error('Quantidade deve ser maior que zero');
+      if (!Number.isFinite(quantidadeNumero) || quantidadeNumero <= 0) throw new Error('Quantidade deve ser maior que zero');
       const valorUnitarioCentavos = parseReaisParaCentavos(valor);
 
       onAdicionar({ catalogoItemId, descricao, tipo, quantidade: quantidadeNumero, valorUnitarioCentavos });

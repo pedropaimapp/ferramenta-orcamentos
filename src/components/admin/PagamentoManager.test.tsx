@@ -51,4 +51,44 @@ describe('PagamentoManager', () => {
       })
     );
   });
+
+  it('rejeita entrada mínima em branco sem salvar', async () => {
+    render(<PagamentoManager faixasIniciais={[]} configuracaoInicial={configuracao} />);
+
+    fireEvent.change(screen.getByLabelText(/entrada mínima/i), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar configuração' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Entrada mínima (%) deve ser um número entre 0 e 100');
+    expect(atualizarConfiguracaoMock).not.toHaveBeenCalled();
+  });
+
+  it('rejeita percentual de desconto fora do intervalo 0-100', async () => {
+    render(<PagamentoManager faixasIniciais={[]} configuracaoInicial={configuracao} />);
+
+    fireEvent.change(screen.getByLabelText(/desconto à vista/i), { target: { value: '300' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar configuração' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Desconto à vista (%) deve ser um número entre 0 e 100');
+    expect(atualizarConfiguracaoMock).not.toHaveBeenCalled();
+  });
+
+  it('rejeita cartão Porto máximo de parcelas igual a zero', async () => {
+    render(<PagamentoManager faixasIniciais={[]} configuracaoInicial={configuracao} />);
+
+    fireEvent.change(screen.getByLabelText(/máximo de parcelas/i), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar configuração' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Cartão Porto - máximo de parcelas deve ser um número inteiro maior ou igual a 1');
+    expect(atualizarConfiguracaoMock).not.toHaveBeenCalled();
+  });
+
+  it('rejeita parcela mínima em branco sem lançar exceção não tratada', async () => {
+    render(<PagamentoManager faixasIniciais={[]} configuracaoInicial={configuracao} />);
+
+    fireEvent.change(screen.getByLabelText(/parcela mínima/i), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar configuração' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Valor inválido/);
+    expect(atualizarConfiguracaoMock).not.toHaveBeenCalled();
+  });
 });

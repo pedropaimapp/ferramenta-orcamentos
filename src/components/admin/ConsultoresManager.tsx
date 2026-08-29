@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import React, { useState, type FormEvent } from 'react';
 import { criarConsultor, atualizarConsultor, desativarConsultor } from '@/lib/consultores/actions';
 import type { Consultor, Oficina } from '@/lib/types';
 

@@ -70,6 +70,7 @@ export async function atualizarConfiguracao(supabase: SupabaseClient, input: Con
       percentual_desconto_avista: input.percentualDescontoAVista,
       cartao_porto_max_parcelas: input.cartaoPortoMaxParcelas,
       cartao_porto_parcela_minima_centavos: input.cartaoPortoParcelaMinimaCentavos,
+      updated_at: new Date().toISOString(),
     })
     .eq('id', 1)
     .select()

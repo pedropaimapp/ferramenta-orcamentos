@@ -69,4 +69,30 @@ describe('atualizarConfiguracao', () => {
     });
     expect(atualizada.percentualEntradaMinima).toBe(0.2);
   });
+
+  it('envia updated_at no payload de atualização', async () => {
+    const single = vi.fn().mockResolvedValue({
+      data: { percentual_entrada_minima: 0.2, percentual_desconto_avista: 0.05, cartao_porto_max_parcelas: 6, cartao_porto_parcela_minima_centavos: 10000 },
+      error: null,
+    });
+    const updatePayloads: Record<string, unknown>[] = [];
+    const supabase = {
+      from: vi.fn(() => ({
+        update: (payload: Record<string, unknown>) => {
+          updatePayloads.push(payload);
+          return { eq: () => ({ select: () => ({ single }) }) };
+        },
+      })),
+    } as any;
+
+    await atualizarConfiguracao(supabase, {
+      percentualEntradaMinima: 0.2,
+      percentualDescontoAVista: 0.05,
+      cartaoPortoMaxParcelas: 6,
+      cartaoPortoParcelaMinimaCentavos: 10000,
+    });
+
+    expect(updatePayloads[0]).toHaveProperty('updated_at');
+    expect(typeof updatePayloads[0].updated_at).toBe('string');
+  });
 });

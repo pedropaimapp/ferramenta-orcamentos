@@ -70,16 +70,34 @@ export function PagamentoManager({
     }
   }
 
+  function validarPercentual(valor: string, rotulo: string): number {
+    const numero = valor.trim() === '' ? NaN : Number(valor);
+    if (!Number.isFinite(numero) || numero < 0 || numero > 100) {
+      throw new Error(`${rotulo} deve ser um número entre 0 e 100`);
+    }
+    return numero;
+  }
+
   async function salvarConfiguracao(e: FormEvent) {
     e.preventDefault();
     setErroConfiguracao(null);
     const supabase = createBrowserClient();
     try {
+      const entrada = validarPercentual(entradaPercentual, 'Entrada mínima (%)');
+      const desconto = validarPercentual(descontoPercentual, 'Desconto à vista (%)');
+
+      const maxParcelas = Number(cartaoPortoMaxParcelas);
+      if (!Number.isFinite(maxParcelas) || !Number.isInteger(maxParcelas) || maxParcelas < 1) {
+        throw new Error('Cartão Porto - máximo de parcelas deve ser um número inteiro maior ou igual a 1');
+      }
+
+      const parcelaMinimaCentavos = parseReaisParaCentavos(cartaoPortoParcelaMinima);
+
       await atualizarConfiguracao(supabase, {
-        percentualEntradaMinima: Number(entradaPercentual) / 100,
-        percentualDescontoAVista: Number(descontoPercentual) / 100,
-        cartaoPortoMaxParcelas: Number(cartaoPortoMaxParcelas),
-        cartaoPortoParcelaMinimaCentavos: parseReaisParaCentavos(cartaoPortoParcelaMinima),
+        percentualEntradaMinima: entrada / 100,
+        percentualDescontoAVista: desconto / 100,
+        cartaoPortoMaxParcelas: maxParcelas,
+        cartaoPortoParcelaMinimaCentavos: parcelaMinimaCentavos,
       });
     } catch (err) {
       setErroConfiguracao(err instanceof Error ? err.message : 'Erro desconhecido');
