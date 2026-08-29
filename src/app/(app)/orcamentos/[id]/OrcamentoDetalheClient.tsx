@@ -2,8 +2,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { OrcamentoForm, type DadosOrcamentoFormulario } from '@/components/orcamento/OrcamentoForm';
-import { salvarEdicaoOrcamento, mudarStatusOrcamento } from '@/lib/orcamento/actions';
+import { salvarEdicaoOrcamento, mudarStatusOrcamento, removerOrcamento } from '@/lib/orcamento/actions';
 import { montarLinkWhatsApp, montarMensagemOrcamento } from '@/lib/orcamento/whatsapp';
 import { calcularTotalItens } from '@/lib/orcamento/totals';
 import { encontrarFaixa, calcularEntradaMinima, dividirEmParcelas } from '@/lib/payment/faixas';
@@ -34,9 +35,11 @@ export function OrcamentoDetalheClient({
   oficinaNome: string;
   consultorNome: string;
 }) {
+  const router = useRouter();
   const [status, setStatus] = useState(orcamento.status);
   const [erroStatus, setErroStatus] = useState<string | null>(null);
   const [erroWhatsApp, setErroWhatsApp] = useState<string | null>(null);
+  const [erroExcluir, setErroExcluir] = useState<string | null>(null);
 
   function enviarPorWhatsApp() {
     setErroWhatsApp(null);
@@ -89,6 +92,17 @@ export function OrcamentoDetalheClient({
     }
   }
 
+  async function excluir() {
+    setErroExcluir(null);
+    if (!window.confirm(`Excluir o orçamento de ${orcamento.clienteNome}? Essa ação não pode ser desfeita.`)) return;
+    try {
+      await removerOrcamento(orcamento.id);
+      router.push('/dashboard');
+    } catch (err) {
+      setErroExcluir(err instanceof Error ? err.message : 'Erro desconhecido');
+    }
+  }
+
   const valoresIniciais: DadosOrcamentoFormulario = {
     clienteNome: orcamento.clienteNome,
     clienteTelefone: orcamento.clienteTelefone,
@@ -132,6 +146,14 @@ export function OrcamentoDetalheClient({
       )}
       <button type="button" onClick={enviarPorWhatsApp} className="rounded border px-3 py-1 text-sm">
         Enviar por WhatsApp
+      </button>
+      {erroExcluir && (
+        <p role="alert" className="text-sm text-red-600">
+          {erroExcluir}
+        </p>
+      )}
+      <button type="button" onClick={excluir} className="rounded border border-red-600 px-3 py-1 text-sm text-red-600">
+        Excluir orçamento
       </button>
     </div>
   );

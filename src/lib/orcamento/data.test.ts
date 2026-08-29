@@ -6,6 +6,7 @@ import {
   obterOrcamentoComItens,
   listarOrcamentosDoConsultor,
   listarTodosOrcamentos,
+  removerOrcamento,
 } from './data';
 
 const orcamentoRow = {
@@ -123,5 +124,22 @@ describe('listarTodosOrcamentos', () => {
 
     const orcamentos = await listarTodosOrcamentos(supabase);
     expect(orcamentos).toHaveLength(1);
+  });
+});
+
+describe('removerOrcamento', () => {
+  it('remove o orçamento pelo id', async () => {
+    const eq = vi.fn().mockResolvedValue({ error: null });
+    const supabase = { from: () => ({ delete: () => ({ eq }) }) } as any;
+
+    await removerOrcamento(supabase, 'o1');
+    expect(eq).toHaveBeenCalledWith('id', 'o1');
+  });
+
+  it('lança erro quando a remoção falha', async () => {
+    const eq = vi.fn().mockResolvedValue({ error: { message: 'sem permissão' } });
+    const supabase = { from: () => ({ delete: () => ({ eq }) }) } as any;
+
+    await expect(removerOrcamento(supabase, 'o1')).rejects.toThrow('sem permissão');
   });
 });

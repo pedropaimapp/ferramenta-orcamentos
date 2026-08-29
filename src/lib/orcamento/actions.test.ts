@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { salvarNovoOrcamento, salvarEdicaoOrcamento, mudarStatusOrcamento, duplicarOrcamento } from './actions';
+import { salvarNovoOrcamento, salvarEdicaoOrcamento, mudarStatusOrcamento, duplicarOrcamento, removerOrcamento } from './actions';
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
@@ -11,11 +11,13 @@ const criarOrcamentoMock = vi.fn();
 const atualizarOrcamentoMock = vi.fn();
 const atualizarStatusOrcamentoMock = vi.fn();
 const obterOrcamentoComItensMock = vi.fn();
+const removerOrcamentoMock = vi.fn();
 vi.mock('./data', () => ({
   criarOrcamento: (...args: unknown[]) => criarOrcamentoMock(...args),
   atualizarOrcamento: (...args: unknown[]) => atualizarOrcamentoMock(...args),
   atualizarStatusOrcamento: (...args: unknown[]) => atualizarStatusOrcamentoMock(...args),
   obterOrcamentoComItens: (...args: unknown[]) => obterOrcamentoComItensMock(...args),
+  removerOrcamento: (...args: unknown[]) => removerOrcamentoMock(...args),
 }));
 
 const dados = { clienteNome: 'Maria', clienteTelefone: '5511987654321', veiculoPlaca: 'ABC1D23', veiculoModelo: 'Onix', itens: [] };
@@ -123,5 +125,16 @@ describe('duplicarOrcamento', () => {
 
     await expect(duplicarOrcamento('o1')).rejects.toThrow('não tem acesso');
     expect(criarOrcamentoMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('removerOrcamento', () => {
+  it('remove o orçamento (a permissão é decidida pela RLS: consultor só remove os próprios, admin remove qualquer um)', async () => {
+    exigirConsultorMock.mockResolvedValue({ id: 'c1', papel: 'consultor', oficinaIds: ['of1'] });
+    removerOrcamentoMock.mockResolvedValue(undefined);
+
+    await removerOrcamento('o1');
+
+    expect(removerOrcamentoMock).toHaveBeenCalledWith({}, 'o1');
   });
 });

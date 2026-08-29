@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { duplicarOrcamento } from '@/lib/orcamento/actions';
+import { duplicarOrcamento, removerOrcamento } from '@/lib/orcamento/actions';
 import type { Orcamento, StatusOrcamento } from '@/lib/types';
 
 const STATUS_LABEL: Record<StatusOrcamento, string> = {
@@ -15,12 +15,13 @@ const STATUS_LABEL: Record<StatusOrcamento, string> = {
 
 export function OrcamentosList({ orcamentosIniciais }: { orcamentosIniciais: Orcamento[] }) {
   const router = useRouter();
+  const [orcamentos, setOrcamentos] = useState(orcamentosIniciais);
   const [statusFiltro, setStatusFiltro] = useState<StatusOrcamento | 'todos'>('todos');
   const [busca, setBusca] = useState('');
   const [erro, setErro] = useState<string | null>(null);
 
   const orcamentosFiltrados = useMemo(() => {
-    return orcamentosIniciais.filter((o) => {
+    return orcamentos.filter((o) => {
       const passaStatus = statusFiltro === 'todos' || o.status === statusFiltro;
       const buscaNormalizada = busca.trim().toLowerCase();
       const passaBusca =
@@ -29,13 +30,24 @@ export function OrcamentosList({ orcamentosIniciais }: { orcamentosIniciais: Orc
         o.veiculoPlaca.toLowerCase().includes(buscaNormalizada);
       return passaStatus && passaBusca;
     });
-  }, [orcamentosIniciais, statusFiltro, busca]);
+  }, [orcamentos, statusFiltro, busca]);
 
   async function duplicar(id: string) {
     setErro(null);
     try {
       const { id: novoId } = await duplicarOrcamento(id);
       router.push(`/orcamentos/${novoId}`);
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Erro desconhecido');
+    }
+  }
+
+  async function remover(id: string, clienteNome: string) {
+    setErro(null);
+    if (!window.confirm(`Excluir o orçamento de ${clienteNome}? Essa ação não pode ser desfeita.`)) return;
+    try {
+      await removerOrcamento(id);
+      setOrcamentos((atuais) => atuais.filter((o) => o.id !== id));
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Erro desconhecido');
     }
@@ -78,6 +90,9 @@ export function OrcamentosList({ orcamentosIniciais }: { orcamentosIniciais: Orc
                 <Link href={`/orcamentos/${o.id}`}>Abrir</Link>
                 <button type="button" onClick={() => duplicar(o.id)}>
                   Duplicar
+                </button>
+                <button type="button" onClick={() => remover(o.id, o.clienteNome)}>
+                  Excluir
                 </button>
               </td>
             </tr>

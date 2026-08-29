@@ -156,3 +156,9 @@ export async function listarTodosOrcamentos(supabase: SupabaseClient): Promise<O
   if (error) throw new Error(`Erro ao listar orçamentos: ${error.message}`);
   return (data ?? []).map(mapOrcamento);
 }
+
+// orcamento_itens é removido em cascata pelo banco (foreign key on delete cascade).
+export async function removerOrcamento(supabase: SupabaseClient, id: string): Promise<void> {
+  const { error } = await supabase.from('orcamentos').delete().eq('id', id);
+  if (error) throw new Error(`Erro ao remover orçamento: ${error.message}`);
+}

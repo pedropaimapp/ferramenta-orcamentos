@@ -4,11 +4,16 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { OrcamentoDetalheClient } from './OrcamentoDetalheClient';
 import type { Orcamento, OrcamentoItem, FaixaPagamento, ConfiguracaoPagamento } from '@/lib/types';
 
+const pushMock = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: pushMock }) }));
+
 const salvarEdicaoOrcamentoMock = vi.fn();
 const mudarStatusOrcamentoMock = vi.fn();
+const removerOrcamentoMock = vi.fn();
 vi.mock('@/lib/orcamento/actions', () => ({
   salvarEdicaoOrcamento: (...args: unknown[]) => salvarEdicaoOrcamentoMock(...args),
   mudarStatusOrcamento: (...args: unknown[]) => mudarStatusOrcamentoMock(...args),
+  removerOrcamento: (...args: unknown[]) => removerOrcamentoMock(...args),
 }));
 
 const orcamento: Orcamento = {
@@ -34,6 +39,8 @@ describe('OrcamentoDetalheClient', () => {
   beforeEach(() => {
     salvarEdicaoOrcamentoMock.mockReset();
     mudarStatusOrcamentoMock.mockReset();
+    removerOrcamentoMock.mockReset();
+    pushMock.mockReset();
   });
 
   it('pré-carrega o formulário com os dados existentes', () => {
@@ -63,6 +70,35 @@ describe('OrcamentoDetalheClient', () => {
   it('mostra um link para baixar o PDF do orçamento', () => {
     render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />);
     expect(screen.getByRole('link', { name: 'Baixar PDF' })).toHaveAttribute('href', '/orcamentos/o1/pdf');
+  });
+});
+
+describe('excluir orçamento', () => {
+  beforeEach(() => {
+    removerOrcamentoMock.mockReset();
+    pushMock.mockReset();
+  });
+
+  it('pede confirmação, remove e volta para o dashboard', async () => {
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true));
+    removerOrcamentoMock.mockResolvedValue(undefined);
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir orçamento' }));
+
+    await waitFor(() => expect(removerOrcamentoMock).toHaveBeenCalledWith('o1'));
+    expect(pushMock).toHaveBeenCalledWith('/dashboard');
+    vi.unstubAllGlobals();
+  });
+
+  it('não remove nada se o usuário cancelar a confirmação', () => {
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(false));
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Excluir orçamento' }));
+
+    expect(removerOrcamentoMock).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });
 

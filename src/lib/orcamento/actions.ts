@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createServerClient } from '../supabase/server';
 import { exigirConsultor } from '../auth/guards';
-import { criarOrcamento, atualizarOrcamento, atualizarStatusOrcamento, obterOrcamentoComItens } from './data';
+import { criarOrcamento, atualizarOrcamento, atualizarStatusOrcamento, obterOrcamentoComItens, removerOrcamento as removerOrcamentoDb } from './data';
 import type { DadosOrcamentoParaSalvar } from './data';
 import type { StatusOrcamento } from '../types';
 
@@ -58,4 +58,14 @@ export async function duplicarOrcamento(id: string): Promise<{ id: string }> {
   });
   revalidatePath('/dashboard');
   return { id: novo.id };
+}
+
+// RLS garante quem pode: consultor só remove os próprios orçamentos, admin remove
+// qualquer um (mesma policy que já cobre leitura/edição/status).
+export async function removerOrcamento(id: string): Promise<void> {
+  await exigirConsultor();
+  const supabase = await createServerClient();
+  await removerOrcamentoDb(supabase, id);
+  revalidatePath('/dashboard');
+  revalidatePath('/admin/orcamentos');
 }

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { removerOrcamento } from '@/lib/orcamento/actions';
 import type { Orcamento, StatusOrcamento } from '@/lib/types';
 
 const STATUS_LABEL: Record<StatusOrcamento, string> = {
@@ -20,11 +21,13 @@ export function AdminOrcamentosList({
   consultoresPorId: Record<string, string>;
   oficinasPorId: Record<string, string>;
 }) {
+  const [orcamentos, setOrcamentos] = useState(orcamentosIniciais);
   const [statusFiltro, setStatusFiltro] = useState<StatusOrcamento | 'todos'>('todos');
   const [busca, setBusca] = useState('');
+  const [erro, setErro] = useState<string | null>(null);
 
   const orcamentosFiltrados = useMemo(() => {
-    return orcamentosIniciais.filter((o) => {
+    return orcamentos.filter((o) => {
       const passaStatus = statusFiltro === 'todos' || o.status === statusFiltro;
       const buscaNormalizada = busca.trim().toLowerCase();
       const passaBusca =
@@ -33,7 +36,18 @@ export function AdminOrcamentosList({
         o.veiculoPlaca.toLowerCase().includes(buscaNormalizada);
       return passaStatus && passaBusca;
     });
-  }, [orcamentosIniciais, statusFiltro, busca]);
+  }, [orcamentos, statusFiltro, busca]);
+
+  async function remover(id: string, clienteNome: string) {
+    setErro(null);
+    if (!window.confirm(`Excluir o orçamento de ${clienteNome}? Essa ação não pode ser desfeita.`)) return;
+    try {
+      await removerOrcamento(id);
+      setOrcamentos((atuais) => atuais.filter((o) => o.id !== id));
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Erro desconhecido');
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -48,6 +62,11 @@ export function AdminOrcamentosList({
           ))}
         </select>
       </div>
+      {erro && (
+        <p role="alert" className="text-sm text-red-600">
+          {erro}
+        </p>
+      )}
       <table className="w-full text-left text-sm">
         <thead>
           <tr>
@@ -67,8 +86,11 @@ export function AdminOrcamentosList({
               <td>{consultoresPorId[o.consultorId] ?? '—'}</td>
               <td>{oficinasPorId[o.oficinaId] ?? '—'}</td>
               <td>{STATUS_LABEL[o.status]}</td>
-              <td>
+              <td className="space-x-2">
                 <Link href={`/orcamentos/${o.id}`}>Abrir</Link>
+                <button type="button" onClick={() => remover(o.id, o.clienteNome)}>
+                  Excluir
+                </button>
               </td>
             </tr>
           ))}
