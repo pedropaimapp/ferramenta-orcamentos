@@ -37,6 +37,31 @@ describe('OrcamentoForm', () => {
     expect(aoSalvar).not.toHaveBeenCalled();
   });
 
+  it('formata o telefone digitado com a máscara brasileira', () => {
+    render(<OrcamentoForm catalogo={[]} faixas={faixas} config={config} aoSalvar={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('Telefone (WhatsApp)'), { target: { value: '11987654321' } });
+    expect(screen.getByPlaceholderText('Telefone (WhatsApp)')).toHaveValue('(11) 98765-4321');
+  });
+
+  it('deixa a placa maiúscula enquanto digita', () => {
+    render(<OrcamentoForm catalogo={[]} faixas={faixas} config={config} aoSalvar={vi.fn()} />);
+    fireEvent.change(screen.getByPlaceholderText('Placa'), { target: { value: 'abc1d23' } });
+    expect(screen.getByPlaceholderText('Placa')).toHaveValue('ABC1D23');
+  });
+
+  it('bloqueia salvar com placa em formato inválido', async () => {
+    const aoSalvar = vi.fn();
+    render(<OrcamentoForm catalogo={[]} faixas={faixas} config={config} aoSalvar={aoSalvar} />);
+
+    preencherItem();
+    fireEvent.change(screen.getByPlaceholderText('Telefone (WhatsApp)'), { target: { value: '11987654321' } });
+    fireEvent.change(screen.getByPlaceholderText('Placa'), { target: { value: 'AB1234' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar orçamento' }));
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Placa inválida'));
+    expect(aoSalvar).not.toHaveBeenCalled();
+  });
+
   it('chama aoSalvar com os dados preenchidos quando válido', async () => {
     const aoSalvar = vi.fn().mockResolvedValue(undefined);
     render(<OrcamentoForm catalogo={[]} faixas={faixas} config={config} aoSalvar={aoSalvar} />);
@@ -51,7 +76,7 @@ describe('OrcamentoForm', () => {
     await waitFor(() => expect(aoSalvar).toHaveBeenCalledTimes(1));
     const dados = aoSalvar.mock.calls[0][0];
     expect(dados.clienteNome).toBe('Maria');
-    expect(dados.clienteTelefone).toBe('11987654321');
+    expect(dados.clienteTelefone).toBe('(11) 98765-4321');
     expect(dados.veiculoPlaca).toBe('ABC1D23');
     expect(dados.veiculoModelo).toBe('Onix');
     expect(dados.itens).toHaveLength(1);

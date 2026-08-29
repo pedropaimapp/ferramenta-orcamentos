@@ -5,7 +5,8 @@ import { ItemForm, type NovoItem } from './ItemForm';
 import { ItemsTable } from './ItemsTable';
 import { CondicaoPagamentoResumo } from './CondicaoPagamentoResumo';
 import { calcularTotalItens } from '@/lib/orcamento/totals';
-import { telefoneValido } from '@/lib/orcamento/telefone';
+import { telefoneValido, formatarTelefoneInput } from '@/lib/orcamento/telefone';
+import { formatarPlacaInput, placaValida } from '@/lib/orcamento/placa';
 import type { CatalogoItem, FaixaPagamento, ConfiguracaoPagamento } from '@/lib/types';
 
 export interface ItemDoFormulario extends NovoItem {
@@ -61,6 +62,10 @@ export function OrcamentoForm({
       setErro('Telefone do cliente inválido.');
       return;
     }
+    if (!placaValida(veiculoPlaca)) {
+      setErro('Placa inválida. Use o formato AAA1234 ou o formato Mercosul AAA1A23.');
+      return;
+    }
     setSalvando(true);
     try {
       await aoSalvar({ clienteNome, clienteTelefone, veiculoPlaca, veiculoModelo, itens });
@@ -75,8 +80,23 @@ export function OrcamentoForm({
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <input placeholder="Nome do cliente" value={clienteNome} onChange={(e) => setClienteNome(e.target.value)} required className="rounded border px-2 py-1" />
-        <input placeholder="Telefone (WhatsApp)" value={clienteTelefone} onChange={(e) => setClienteTelefone(e.target.value)} required className="rounded border px-2 py-1" />
-        <input placeholder="Placa" value={veiculoPlaca} onChange={(e) => setVeiculoPlaca(e.target.value)} required className="rounded border px-2 py-1" />
+        <input
+          placeholder="Telefone (WhatsApp)"
+          value={clienteTelefone}
+          onChange={(e) => setClienteTelefone(formatarTelefoneInput(e.target.value))}
+          inputMode="numeric"
+          maxLength={15}
+          required
+          className="rounded border px-2 py-1"
+        />
+        <input
+          placeholder="Placa"
+          value={veiculoPlaca}
+          onChange={(e) => setVeiculoPlaca(formatarPlacaInput(e.target.value))}
+          maxLength={7}
+          required
+          className="rounded border px-2 py-1"
+        />
         <input placeholder="Modelo/marca" value={veiculoModelo} onChange={(e) => setVeiculoModelo(e.target.value)} required className="rounded border px-2 py-1" />
       </div>
 
