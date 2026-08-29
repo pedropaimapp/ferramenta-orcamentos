@@ -8,12 +8,13 @@ import { NovoOrcamentoClient } from './NovoOrcamentoClient';
 export default async function NovoOrcamentoPage() {
   const consultor = await exigirConsultor();
   const supabase = await createServerClient();
-  const [catalogo, faixas, config, oficinas] = await Promise.all([
+  const [catalogo, faixas, config, todasOficinas] = await Promise.all([
     listarCatalogo(supabase),
     listarFaixas(supabase),
     obterConfiguracao(supabase),
-    consultor.papel === 'admin' ? listarOficinas(supabase) : Promise.resolve([]),
+    listarOficinas(supabase),
   ]);
+  const oficinas = consultor.papel === 'admin' ? todasOficinas : todasOficinas.filter((o) => consultor.oficinaIds.includes(o.id));
 
   return (
     <div>

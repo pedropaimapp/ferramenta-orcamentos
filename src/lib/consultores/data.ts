@@ -7,9 +7,11 @@ interface ConsultorRow {
   nome: string;
   login: string;
   papel: 'consultor' | 'admin';
-  oficina_id: string | null;
   ativo: boolean;
+  consultor_oficinas?: { oficina_id: string }[] | null;
 }
+
+export const SELECT_CONSULTOR_COM_OFICINAS = '*, consultor_oficinas(oficina_id)';
 
 export function mapConsultor(row: ConsultorRow): Consultor {
   return {
@@ -18,13 +20,13 @@ export function mapConsultor(row: ConsultorRow): Consultor {
     nome: row.nome,
     login: row.login,
     papel: row.papel,
-    oficinaId: row.oficina_id,
+    oficinaIds: (row.consultor_oficinas ?? []).map((co) => co.oficina_id),
     ativo: row.ativo,
   };
 }
 
 export async function listarConsultores(supabase: SupabaseClient): Promise<Consultor[]> {
-  const { data, error } = await supabase.from('consultores').select('*').order('nome');
+  const { data, error } = await supabase.from('consultores').select(SELECT_CONSULTOR_COM_OFICINAS).order('nome');
   if (error) throw new Error(`Erro ao listar consultores: ${error.message}`);
   return (data ?? []).map(mapConsultor);
 }

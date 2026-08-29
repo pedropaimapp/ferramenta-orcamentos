@@ -12,7 +12,7 @@ export interface Consultor {
   nome: string;
   login: string;
   papel: 'consultor' | 'admin';
-  oficinaId: string | null;
+  oficinaIds: string[];
   ativo: boolean;
 }
 

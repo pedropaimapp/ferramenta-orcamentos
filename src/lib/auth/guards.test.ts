@@ -9,8 +9,8 @@ vi.mock('next/navigation', () => ({ redirect: (path: string) => redirectMock(pat
 const getConsultorLogadoMock = vi.fn();
 vi.mock('./session', () => ({ getConsultorLogado: () => getConsultorLogadoMock() }));
 
-const consultor = { id: 'c1', authUserId: 'a1', nome: 'João', login: 'j@x.com', papel: 'consultor' as const, oficinaId: 'o1', ativo: true };
-const admin = { id: 'c2', authUserId: 'a2', nome: 'Ana', login: 'ana@x.com', papel: 'admin' as const, oficinaId: null, ativo: true };
+const consultor = { id: 'c1', authUserId: 'a1', nome: 'João', login: 'j@x.com', papel: 'consultor' as const, oficinaIds: ['o1'], ativo: true };
+const admin = { id: 'c2', authUserId: 'a2', nome: 'Ana', login: 'ana@x.com', papel: 'admin' as const, oficinaIds: [], ativo: true };
 
 describe('exigirConsultor', () => {
   beforeEach(() => getConsultorLogadoMock.mockReset());

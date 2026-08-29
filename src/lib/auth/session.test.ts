@@ -21,7 +21,7 @@ describe('getConsultorLogado', () => {
     expect(await getConsultorLogado()).toBeNull();
   });
 
-  it('retorna o consultor mapeado (camelCase) quando autenticado', async () => {
+  it('retorna o consultor mapeado (camelCase) quando autenticado, com as oficinas vinculadas', async () => {
     getUserMock.mockResolvedValue({ data: { user: { id: 'auth-1' } } });
     singleMock.mockResolvedValue({
       data: {
@@ -30,8 +30,8 @@ describe('getConsultorLogado', () => {
         nome: 'João',
         login: 'joao@topstop.local',
         papel: 'consultor',
-        oficina_id: 'of-1',
         ativo: true,
+        consultor_oficinas: [{ oficina_id: 'of-1' }, { oficina_id: 'of-2' }],
       },
       error: null,
     });
@@ -42,7 +42,7 @@ describe('getConsultorLogado', () => {
       nome: 'João',
       login: 'joao@topstop.local',
       papel: 'consultor',
-      oficinaId: 'of-1',
+      oficinaIds: ['of-1', 'of-2'],
       ativo: true,
     });
   });

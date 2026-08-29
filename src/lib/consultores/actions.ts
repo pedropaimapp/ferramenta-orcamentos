@@ -9,7 +9,19 @@ export interface CriarConsultorInput {
   login: string;
   senha: string;
   papel: 'consultor' | 'admin';
-  oficinaId: string | null;
+  oficinaIds: string[];
+}
+
+async function vincularOficinas(
+  admin: ReturnType<typeof createAdminClient>,
+  consultorId: string,
+  oficinaIds: string[]
+): Promise<void> {
+  if (oficinaIds.length === 0) return;
+  const { error } = await admin
+    .from('consultor_oficinas')
+    .insert(oficinaIds.map((oficinaId) => ({ consultor_id: consultorId, oficina_id: oficinaId })));
+  if (error) throw new Error(`Erro ao vincular oficinas: ${error.message}`);
 }
 
 export async function criarConsultor(input: CriarConsultorInput): Promise<Consultor> {
@@ -32,7 +44,6 @@ export async function criarConsultor(input: CriarConsultorInput): Promise<Consul
       nome: input.nome,
       login: input.login,
       papel: input.papel,
-      oficina_id: input.oficinaId,
       ativo: true,
     })
     .select()
@@ -43,28 +54,37 @@ export async function criarConsultor(input: CriarConsultorInput): Promise<Consul
     throw new Error(`Erro ao salvar consultor: ${dbError?.message ?? 'desconhecido'}`);
   }
 
+  try {
+    await vincularOficinas(admin, data.id, input.oficinaIds);
+  } catch (err) {
+    await admin.auth.admin.deleteUser(authData.user.id); // cascata: remove consultores + consultor_oficinas
+    throw err;
+  }
+
   return {
     id: data.id,
     authUserId: data.auth_user_id,
     nome: data.nome,
     login: data.login,
     papel: data.papel,
-    oficinaId: data.oficina_id,
+    oficinaIds: input.oficinaIds,
     ativo: data.ativo,
   };
 }
 
 export async function atualizarConsultor(
   id: string,
-  input: { nome: string; papel: 'consultor' | 'admin'; oficinaId: string | null }
+  input: { nome: string; papel: 'consultor' | 'admin'; oficinaIds: string[] }
 ): Promise<void> {
   await exigirAdmin();
   const admin = createAdminClient();
-  const { error } = await admin
-    .from('consultores')
-    .update({ nome: input.nome, papel: input.papel, oficina_id: input.oficinaId })
-    .eq('id', id);
+  const { error } = await admin.from('consultores').update({ nome: input.nome, papel: input.papel }).eq('id', id);
   if (error) throw new Error(`Erro ao atualizar consultor: ${error.message}`);
+
+  const { error: delError } = await admin.from('consultor_oficinas').delete().eq('consultor_id', id);
+  if (delError) throw new Error(`Erro ao atualizar oficinas do consultor: ${delError.message}`);
+
+  await vincularOficinas(admin, id, input.oficinaIds);
 }
 
 export async function desativarConsultor(id: string): Promise<void> {

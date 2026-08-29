@@ -17,8 +17,10 @@ export function ConsultoresManager({
   const [login, setLogin] = useState('');
   const [senha, setSenha] = useState('');
   const [papel, setPapel] = useState<'consultor' | 'admin'>('consultor');
-  const [oficinaId, setOficinaId] = useState('');
+  const [oficinaIds, setOficinaIds] = useState<string[]>([]);
   const [erro, setErro] = useState<string | null>(null);
+
+  const nomeOficinasPorId = Object.fromEntries(oficinas.map((o) => [o.id, o.nome]));
 
   function iniciarEdicao(consultor: Consultor | null) {
     setEditando(consultor);
@@ -26,8 +28,12 @@ export function ConsultoresManager({
     setLogin(consultor?.login ?? '');
     setSenha('');
     setPapel(consultor?.papel ?? 'consultor');
-    setOficinaId(consultor?.oficinaId ?? '');
+    setOficinaIds(consultor?.oficinaIds ?? []);
     setErro(null);
+  }
+
+  function alternarOficina(id: string) {
+    setOficinaIds((atuais) => (atuais.includes(id) ? atuais.filter((x) => x !== id) : [...atuais, id]));
   }
 
   async function salvar(e: FormEvent) {
@@ -35,10 +41,10 @@ export function ConsultoresManager({
     setErro(null);
     try {
       if (editando) {
-        await atualizarConsultor(editando.id, { nome, papel, oficinaId: oficinaId || null });
-        setConsultores((atuais) => atuais.map((c) => (c.id === editando.id ? { ...c, nome, papel, oficinaId: oficinaId || null } : c)));
+        await atualizarConsultor(editando.id, { nome, papel, oficinaIds });
+        setConsultores((atuais) => atuais.map((c) => (c.id === editando.id ? { ...c, nome, papel, oficinaIds } : c)));
       } else {
-        const criado = await criarConsultor({ nome, login, senha, papel, oficinaId: oficinaId || null });
+        const criado = await criarConsultor({ nome, login, senha, papel, oficinaIds });
         setConsultores((atuais) => [...atuais, criado]);
       }
       iniciarEdicao(null);
@@ -65,6 +71,7 @@ export function ConsultoresManager({
             <th>Nome</th>
             <th>Login</th>
             <th>Papel</th>
+            <th>Oficinas</th>
             <th>Status</th>
             <th></th>
           </tr>
@@ -75,6 +82,7 @@ export function ConsultoresManager({
               <td>{c.nome}</td>
               <td>{c.login}</td>
               <td>{c.papel}</td>
+              <td>{c.oficinaIds.length > 0 ? c.oficinaIds.map((id) => nomeOficinasPorId[id] ?? '—').join(', ') : '—'}</td>
               <td>{c.ativo ? 'Ativo' : 'Inativo'}</td>
               <td className="space-x-2">
                 <button type="button" onClick={() => iniciarEdicao(c)}>
@@ -109,14 +117,16 @@ export function ConsultoresManager({
           <option value="consultor">Consultor</option>
           <option value="admin">Admin</option>
         </select>
-        <select value={oficinaId} onChange={(e) => setOficinaId(e.target.value)} className="w-full rounded border px-2 py-1">
-          <option value="">Sem oficina (admin)</option>
+        <fieldset className="space-y-1 rounded border p-2">
+          <legend className="px-1 text-sm">Oficinas</legend>
+          {oficinas.length === 0 && <p className="text-sm text-gray-500">Nenhuma oficina cadastrada ainda.</p>}
           {oficinas.map((o) => (
-            <option key={o.id} value={o.id}>
+            <label key={o.id} className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={oficinaIds.includes(o.id)} onChange={() => alternarOficina(o.id)} />
               {o.nome}
-            </option>
+            </label>
           ))}
-        </select>
+        </fieldset>
         {erro && (
           <p role="alert" className="text-sm text-red-600">
             {erro}

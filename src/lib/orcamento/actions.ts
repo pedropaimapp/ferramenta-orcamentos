@@ -7,11 +7,13 @@ import { criarOrcamento, atualizarOrcamento, atualizarStatusOrcamento, obterOrca
 import type { DadosOrcamentoParaSalvar } from './data';
 import type { StatusOrcamento } from '../types';
 
-export async function salvarNovoOrcamento(dados: DadosOrcamentoParaSalvar, oficinaIdParaAdmin?: string): Promise<{ id: string }> {
+export async function salvarNovoOrcamento(dados: DadosOrcamentoParaSalvar, oficinaId: string): Promise<{ id: string }> {
   const consultor = await exigirConsultor();
-  const oficinaId = consultor.papel === 'admin' ? oficinaIdParaAdmin : consultor.oficinaId;
   if (!oficinaId) {
     throw new Error('Selecione uma oficina para o orçamento.');
+  }
+  if (consultor.papel !== 'admin' && !consultor.oficinaIds.includes(oficinaId)) {
+    throw new Error('Você não tem acesso a essa oficina.');
   }
   const supabase = await createServerClient();
   const orcamento = await criarOrcamento(supabase, consultor.id, oficinaId, dados);
@@ -37,9 +39,9 @@ export async function duplicarOrcamento(id: string): Promise<{ id: string }> {
   const consultor = await exigirConsultor();
   const supabase = await createServerClient();
   const { orcamento, itens } = await obterOrcamentoComItens(supabase, id);
-  const oficinaId = consultor.papel === 'admin' ? orcamento.oficinaId : consultor.oficinaId;
-  if (!oficinaId) {
-    throw new Error('Selecione uma oficina para o orçamento.');
+  const oficinaId = orcamento.oficinaId;
+  if (consultor.papel !== 'admin' && !consultor.oficinaIds.includes(oficinaId)) {
+    throw new Error('Você não tem acesso à oficina deste orçamento.');
   }
   const novo = await criarOrcamento(supabase, consultor.id, oficinaId, {
     clienteNome: orcamento.clienteNome,
