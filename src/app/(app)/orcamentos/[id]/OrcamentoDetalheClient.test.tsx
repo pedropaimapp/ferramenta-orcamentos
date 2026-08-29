@@ -1,0 +1,62 @@
+import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { OrcamentoDetalheClient } from './OrcamentoDetalheClient';
+import type { Orcamento, OrcamentoItem, FaixaPagamento, ConfiguracaoPagamento } from '@/lib/types';
+
+const salvarEdicaoOrcamentoMock = vi.fn();
+const mudarStatusOrcamentoMock = vi.fn();
+vi.mock('@/lib/orcamento/actions', () => ({
+  salvarEdicaoOrcamento: (...args: unknown[]) => salvarEdicaoOrcamentoMock(...args),
+  mudarStatusOrcamento: (...args: unknown[]) => mudarStatusOrcamentoMock(...args),
+}));
+
+const orcamento: Orcamento = {
+  id: 'o1',
+  clienteNome: 'Maria',
+  clienteTelefone: '5511987654321',
+  veiculoPlaca: 'ABC1D23',
+  veiculoModelo: 'Onix',
+  consultorId: 'c1',
+  oficinaId: 'of1',
+  status: 'rascunho',
+  validadeDias: 7,
+  createdAt: '2026-08-28T00:00:00Z',
+  updatedAt: '2026-08-28T00:00:00Z',
+};
+const itens: OrcamentoItem[] = [
+  { id: 'i1', orcamentoId: 'o1', catalogoItemId: null, descricao: 'Troca de óleo', tipo: 'servico', quantidade: 1, valorUnitarioCentavos: 10000 },
+];
+const faixas: FaixaPagamento[] = [{ id: 'f1', valorMinCentavos: 0, valorMaxCentavos: null, parcelasSemJuros: 1 }];
+const config: ConfiguracaoPagamento = { percentualEntradaMinima: 0.3, percentualDescontoAVista: 0.05, cartaoPortoMaxParcelas: 6, cartaoPortoParcelaMinimaCentavos: 10000 };
+
+describe('OrcamentoDetalheClient', () => {
+  beforeEach(() => {
+    salvarEdicaoOrcamentoMock.mockReset();
+    mudarStatusOrcamentoMock.mockReset();
+  });
+
+  it('pré-carrega o formulário com os dados existentes', () => {
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} />);
+    expect(screen.getByDisplayValue('Maria')).toBeInTheDocument();
+    expect(screen.getByText('Troca de óleo')).toBeInTheDocument();
+  });
+
+  it('muda o status do orçamento', async () => {
+    mudarStatusOrcamentoMock.mockResolvedValue(undefined);
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} />);
+
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'enviado' } });
+
+    await waitFor(() => expect(mudarStatusOrcamentoMock).toHaveBeenCalledWith('o1', 'enviado'));
+  });
+
+  it('salva edições através de salvarEdicaoOrcamento com o id correto', async () => {
+    salvarEdicaoOrcamentoMock.mockResolvedValue(undefined);
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar orçamento' }));
+
+    await waitFor(() => expect(salvarEdicaoOrcamentoMock).toHaveBeenCalledWith('o1', expect.objectContaining({ clienteNome: 'Maria' })));
+  });
+});
