@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatarReais } from './format';
+import { formatarReais, parseReaisParaCentavos } from './format';
 
 describe('formatarReais', () => {
   it('formata centavos inteiros como reais com duas casas decimais', () => {
@@ -12,5 +12,17 @@ describe('formatarReais', () => {
 
   it('formata zero', () => {
     expect(formatarReais(0)).toBe('R$ 0,00');
+  });
+});
+
+describe('parseReaisParaCentavos', () => {
+  it('converte um valor em formato brasileiro para centavos', () => {
+    expect(parseReaisParaCentavos('1.825,00')).toBe(182500);
+    expect(parseReaisParaCentavos('50,5')).toBe(5050);
+    expect(parseReaisParaCentavos('0')).toBe(0);
+  });
+
+  it('lança erro para texto que não é um número', () => {
+    expect(() => parseReaisParaCentavos('abc')).toThrow();
   });
 });

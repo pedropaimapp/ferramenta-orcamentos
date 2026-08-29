@@ -6,3 +6,12 @@ export function formatarReais(centavos: number): string {
   // Replace non-breaking space (U+00A0) with regular space
   return formatted.replace(/ /g, ' ');
 }
+
+export function parseReaisParaCentavos(valor: string): number {
+  const normalizado = valor.replace(/\./g, '').replace(',', '.').trim();
+  const numero = Number(normalizado);
+  if (Number.isNaN(numero)) {
+    throw new Error(`Valor inválido: ${valor}`);
+  }
+  return Math.round(numero * 100);
+}
