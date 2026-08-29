@@ -10,13 +10,11 @@ import { calcularTotalItens } from '@/lib/orcamento/totals';
 import { encontrarFaixa, calcularEntradaMinima, dividirEmParcelas } from '@/lib/payment/faixas';
 import { calcularDescontoAVista, calcularCartaoPorto } from '@/lib/payment/alternativas';
 import type { CatalogoItem, FaixaPagamento, ConfiguracaoPagamento, Orcamento, OrcamentoItem, StatusOrcamento } from '@/lib/types';
-
-const STATUS_LABEL: Record<StatusOrcamento, string> = {
-  rascunho: 'Rascunho',
-  enviado: 'Enviado',
-  aprovado: 'Aprovado',
-  recusado: 'Recusado',
-};
+import { Card } from '@/components/ui/Card';
+import { Field, Select } from '@/components/ui/Input';
+import { Button, buttonClasses } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
+import { STATUS_LABEL } from '@/components/ui/Badge';
 
 export function OrcamentoDetalheClient({
   orcamento,
@@ -119,42 +117,34 @@ export function OrcamentoDetalheClient({
   };
 
   return (
-    <div className="space-y-4">
-      <label className="block text-sm" htmlFor="status">
-        Status
-        <select id="status" value={status} onChange={(e) => alterarStatus(e.target.value as StatusOrcamento)} className="mt-1 block rounded border px-2 py-1">
-          {Object.entries(STATUS_LABEL).map(([valor, rotulo]) => (
-            <option key={valor} value={valor}>
-              {rotulo}
-            </option>
-          ))}
-        </select>
-      </label>
-      {erroStatus && (
-        <p role="alert" className="text-sm text-red-600">
-          {erroStatus}
-        </p>
-      )}
+    <div className="space-y-6">
+      <Card className="flex flex-wrap items-end justify-between gap-4">
+        <Field label="Status" htmlFor="status" className="max-w-xs">
+          <Select id="status" value={status} onChange={(e) => alterarStatus(e.target.value as StatusOrcamento)}>
+            {Object.entries(STATUS_LABEL).map(([valor, rotulo]) => (
+              <option key={valor} value={valor}>
+                {rotulo}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/orcamentos/${orcamento.id}/pdf`} target="_blank" rel="noreferrer" className={buttonClasses('outline')}>
+            Baixar PDF
+          </Link>
+          <Button type="button" variant="outline" onClick={enviarPorWhatsApp}>
+            Enviar por WhatsApp
+          </Button>
+          <Button type="button" variant="danger" onClick={excluir}>
+            Excluir orçamento
+          </Button>
+        </div>
+      </Card>
+      {erroStatus && <Alert>{erroStatus}</Alert>}
+      {erroWhatsApp && <Alert>{erroWhatsApp}</Alert>}
+      {erroExcluir && <Alert>{erroExcluir}</Alert>}
+
       <OrcamentoForm catalogo={catalogo} faixas={faixas} config={config} valoresIniciais={valoresIniciais} aoSalvar={aoSalvar} />
-      <Link href={`/orcamentos/${orcamento.id}/pdf`} target="_blank" rel="noreferrer" className="inline-block rounded border px-3 py-1 text-sm">
-        Baixar PDF
-      </Link>
-      {erroWhatsApp && (
-        <p role="alert" className="text-sm text-red-600">
-          {erroWhatsApp}
-        </p>
-      )}
-      <button type="button" onClick={enviarPorWhatsApp} className="rounded border px-3 py-1 text-sm">
-        Enviar por WhatsApp
-      </button>
-      {erroExcluir && (
-        <p role="alert" className="text-sm text-red-600">
-          {erroExcluir}
-        </p>
-      )}
-      <button type="button" onClick={excluir} className="rounded border border-red-600 px-3 py-1 text-sm text-red-600">
-        Excluir orçamento
-      </button>
     </div>
   );
 }

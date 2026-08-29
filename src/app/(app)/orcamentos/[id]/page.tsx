@@ -5,6 +5,7 @@ import { obterOrcamentoComItens } from '@/lib/orcamento/data';
 import { listarOficinas } from '@/lib/oficinas/data';
 import { listarConsultores } from '@/lib/consultores/data';
 import { OrcamentoDetalheClient } from './OrcamentoDetalheClient';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default async function OrcamentoDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,7 +24,7 @@ export default async function OrcamentoDetalhePage({ params }: { params: Promise
 
   return (
     <div>
-      <h1 className="mb-4 text-lg font-semibold">Orçamento de {orcamento.clienteNome}</h1>
+      <PageHeader title={`Orçamento de ${orcamento.clienteNome}`} />
       <OrcamentoDetalheClient
         orcamento={orcamento}
         itens={itens}

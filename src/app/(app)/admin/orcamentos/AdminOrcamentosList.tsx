@@ -4,13 +4,11 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { removerOrcamento } from '@/lib/orcamento/actions';
 import type { Orcamento, StatusOrcamento } from '@/lib/types';
-
-const STATUS_LABEL: Record<StatusOrcamento, string> = {
-  rascunho: 'Rascunho',
-  enviado: 'Enviado',
-  aprovado: 'Aprovado',
-  recusado: 'Recusado',
-};
+import { Input, Select } from '@/components/ui/Input';
+import { Table, EmptyState } from '@/components/ui/Table';
+import { StatusBadge, STATUS_LABEL } from '@/components/ui/Badge';
+import { Alert } from '@/components/ui/Alert';
+import { buttonClasses } from '@/components/ui/Button';
 
 export function AdminOrcamentosList({
   orcamentosIniciais,
@@ -51,51 +49,70 @@ export function AdminOrcamentosList({
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4">
-        <input placeholder="Buscar por cliente ou placa" value={busca} onChange={(e) => setBusca(e.target.value)} className="rounded border px-2 py-1" />
-        <select value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value as StatusOrcamento | 'todos')} className="rounded border px-2 py-1">
+      <div className="flex flex-wrap gap-3">
+        <Input
+          placeholder="Buscar por cliente ou placa"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="max-w-xs"
+        />
+        <Select
+          value={statusFiltro}
+          onChange={(e) => setStatusFiltro(e.target.value as StatusOrcamento | 'todos')}
+          className="max-w-[12rem]"
+        >
           <option value="todos">Todos os status</option>
           {Object.entries(STATUS_LABEL).map(([valor, rotulo]) => (
             <option key={valor} value={valor}>
               {rotulo}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
-      {erro && (
-        <p role="alert" className="text-sm text-red-600">
-          {erro}
-        </p>
-      )}
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr>
-            <th>Cliente</th>
-            <th>Placa</th>
-            <th>Consultor</th>
-            <th>Oficina</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {orcamentosFiltrados.map((o) => (
-            <tr key={o.id}>
-              <td>{o.clienteNome}</td>
-              <td>{o.veiculoPlaca}</td>
-              <td>{consultoresPorId[o.consultorId] ?? '—'}</td>
-              <td>{oficinasPorId[o.oficinaId] ?? '—'}</td>
-              <td>{STATUS_LABEL[o.status]}</td>
-              <td className="space-x-2">
-                <Link href={`/orcamentos/${o.id}`}>Abrir</Link>
-                <button type="button" onClick={() => remover(o.id, o.clienteNome)}>
-                  Excluir
-                </button>
-              </td>
+      {erro && <Alert>{erro}</Alert>}
+      {orcamentosFiltrados.length === 0 ? (
+        <EmptyState>Nenhum orçamento encontrado.</EmptyState>
+      ) : (
+        <Table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Placa</th>
+              <th>Consultor</th>
+              <th>Oficina</th>
+              <th>Status</th>
+              <th></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {orcamentosFiltrados.map((o) => (
+              <tr key={o.id}>
+                <td className="font-medium text-porto-black">{o.clienteNome}</td>
+                <td className="font-mono uppercase text-porto-gray">{o.veiculoPlaca}</td>
+                <td>{consultoresPorId[o.consultorId] ?? '—'}</td>
+                <td>{oficinasPorId[o.oficinaId] ?? '—'}</td>
+                <td>
+                  <StatusBadge status={o.status} />
+                </td>
+                <td>
+                  <div className="flex items-center gap-4">
+                    <Link href={`/orcamentos/${o.id}`} className={buttonClasses('link')}>
+                      Abrir
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => remover(o.id, o.clienteNome)}
+                      className="text-sm font-medium text-rose-600 hover:underline"
+                    >
+                      Excluir
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
     </div>
   );
 }

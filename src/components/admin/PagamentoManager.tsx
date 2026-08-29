@@ -5,6 +5,11 @@ import { createBrowserClient } from '@/lib/supabase/client';
 import { criarFaixa, atualizarFaixa, removerFaixa, atualizarConfiguracao } from '@/lib/pagamento/data';
 import { formatarReais, parseReaisParaCentavos } from '@/lib/format';
 import type { FaixaPagamento, ConfiguracaoPagamento } from '@/lib/types';
+import { Card, CardTitle } from '@/components/ui/Card';
+import { Field, Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
+import { Table, EmptyState } from '@/components/ui/Table';
 
 export function PagamentoManager({
   faixasIniciais,
@@ -107,86 +112,76 @@ export function PagamentoManager({
   return (
     <div className="space-y-10">
       <section className="space-y-4">
-        <h1 className="text-lg font-semibold">Faixas de pagamento</h1>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr>
-              <th>De</th>
-              <th>Até</th>
-              <th>Parcelas sem juros</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {faixas.map((f) => (
-              <tr key={f.id}>
-                <td>{formatarReais(f.valorMinCentavos)}</td>
-                <td>{f.valorMaxCentavos === null ? 'sem limite' : formatarReais(f.valorMaxCentavos)}</td>
-                <td>{f.parcelasSemJuros}x</td>
-                <td className="space-x-2">
-                  <button type="button" onClick={() => iniciarEdicaoFaixa(f)}>
-                    Editar
-                  </button>
-                  <button type="button" onClick={() => removerFaixaSelecionada(f.id)}>
-                    Remover
-                  </button>
-                </td>
+        <h2 className="font-heading text-lg font-bold text-porto-black">Faixas de pagamento</h2>
+        {faixas.length === 0 ? (
+          <EmptyState>Nenhuma faixa cadastrada ainda.</EmptyState>
+        ) : (
+          <Table>
+            <thead>
+              <tr>
+                <th>De</th>
+                <th>Até</th>
+                <th>Parcelas sem juros</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {faixas.map((f) => (
+                <tr key={f.id}>
+                  <td className="font-medium text-porto-black">{formatarReais(f.valorMinCentavos)}</td>
+                  <td>{f.valorMaxCentavos === null ? 'sem limite' : formatarReais(f.valorMaxCentavos)}</td>
+                  <td>{f.parcelasSemJuros}x</td>
+                  <td>
+                    <div className="flex items-center gap-4">
+                      <button type="button" onClick={() => iniciarEdicaoFaixa(f)} className="text-sm font-medium text-porto-blue hover:underline">
+                        Editar
+                      </button>
+                      <button type="button" onClick={() => removerFaixaSelecionada(f.id)} className="text-sm font-medium text-rose-600 hover:underline">
+                        Remover
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
 
-        <form onSubmit={salvarFaixa} className="space-y-2 rounded border p-4">
-          <h2 className="font-medium">{editandoFaixa ? 'Editar faixa' : 'Nova faixa'}</h2>
-          <input placeholder="Valor mínimo (R$)" value={valorMin} onChange={(e) => setValorMin(e.target.value)} required className="w-full rounded border px-2 py-1" />
-          <input placeholder="Valor máximo (R$, vazio = sem limite)" value={valorMax} onChange={(e) => setValorMax(e.target.value)} className="w-full rounded border px-2 py-1" />
-          <input placeholder="Parcelas sem juros" type="number" min={1} value={parcelas} onChange={(e) => setParcelas(e.target.value)} required className="w-full rounded border px-2 py-1" />
-          {erroFaixa && (
-            <p role="alert" className="text-sm text-red-600">
-              {erroFaixa}
-            </p>
-          )}
+        <Card as="form" onSubmit={salvarFaixa} className="max-w-xl space-y-3">
+          <CardTitle>{editandoFaixa ? 'Editar faixa' : 'Nova faixa'}</CardTitle>
+          <Input placeholder="Valor mínimo (R$)" value={valorMin} onChange={(e) => setValorMin(e.target.value)} required />
+          <Input placeholder="Valor máximo (R$, vazio = sem limite)" value={valorMax} onChange={(e) => setValorMax(e.target.value)} />
+          <Input placeholder="Parcelas sem juros" type="number" min={1} value={parcelas} onChange={(e) => setParcelas(e.target.value)} required />
+          {erroFaixa && <Alert>{erroFaixa}</Alert>}
           <div className="flex gap-2">
-            <button type="submit" className="rounded bg-black px-3 py-1 text-white">
-              Salvar
-            </button>
+            <Button type="submit">Salvar</Button>
             {editandoFaixa && (
-              <button type="button" onClick={() => iniciarEdicaoFaixa(null)}>
+              <Button type="button" variant="outline" onClick={() => iniciarEdicaoFaixa(null)}>
                 Cancelar
-              </button>
+              </Button>
             )}
           </div>
-        </form>
+        </Card>
       </section>
 
       <section className="space-y-4">
-        <h1 className="text-lg font-semibold">Configuração geral</h1>
-        <form onSubmit={salvarConfiguracao} className="space-y-2 rounded border p-4">
-          <label className="block text-sm">
-            Entrada mínima (%)
-            <input value={entradaPercentual} onChange={(e) => setEntradaPercentual(e.target.value)} className="mt-1 w-full rounded border px-2 py-1" />
-          </label>
-          <label className="block text-sm">
-            Desconto à vista (%)
-            <input value={descontoPercentual} onChange={(e) => setDescontoPercentual(e.target.value)} className="mt-1 w-full rounded border px-2 py-1" />
-          </label>
-          <label className="block text-sm">
-            Cartão Porto - máximo de parcelas
-            <input value={cartaoPortoMaxParcelas} onChange={(e) => setCartaoPortoMaxParcelas(e.target.value)} className="mt-1 w-full rounded border px-2 py-1" />
-          </label>
-          <label className="block text-sm">
-            Cartão Porto - parcela mínima (R$)
-            <input value={cartaoPortoParcelaMinima} onChange={(e) => setCartaoPortoParcelaMinima(e.target.value)} className="mt-1 w-full rounded border px-2 py-1" />
-          </label>
-          {erroConfiguracao && (
-            <p role="alert" className="text-sm text-red-600">
-              {erroConfiguracao}
-            </p>
-          )}
-          <button type="submit" className="rounded bg-black px-3 py-1 text-white">
-            Salvar configuração
-          </button>
-        </form>
+        <h2 className="font-heading text-lg font-bold text-porto-black">Configuração geral</h2>
+        <Card as="form" onSubmit={salvarConfiguracao} className="max-w-xl space-y-3">
+          <Field label="Entrada mínima (%)" htmlFor="entrada-minima">
+            <Input id="entrada-minima" value={entradaPercentual} onChange={(e) => setEntradaPercentual(e.target.value)} />
+          </Field>
+          <Field label="Desconto à vista (%)" htmlFor="desconto-a-vista">
+            <Input id="desconto-a-vista" value={descontoPercentual} onChange={(e) => setDescontoPercentual(e.target.value)} />
+          </Field>
+          <Field label="Cartão Porto - máximo de parcelas" htmlFor="cartao-porto-max-parcelas">
+            <Input id="cartao-porto-max-parcelas" value={cartaoPortoMaxParcelas} onChange={(e) => setCartaoPortoMaxParcelas(e.target.value)} />
+          </Field>
+          <Field label="Cartão Porto - parcela mínima (R$)" htmlFor="cartao-porto-parcela-minima">
+            <Input id="cartao-porto-parcela-minima" value={cartaoPortoParcelaMinima} onChange={(e) => setCartaoPortoParcelaMinima(e.target.value)} />
+          </Field>
+          {erroConfiguracao && <Alert>{erroConfiguracao}</Alert>}
+          <Button type="submit">Salvar configuração</Button>
+        </Card>
       </section>
     </div>
   );

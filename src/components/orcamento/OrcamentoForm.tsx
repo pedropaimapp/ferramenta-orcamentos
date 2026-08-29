@@ -8,6 +8,10 @@ import { calcularTotalItens } from '@/lib/orcamento/totals';
 import { telefoneValido, formatarTelefoneInput } from '@/lib/orcamento/telefone';
 import { formatarPlacaInput, placaValida } from '@/lib/orcamento/placa';
 import type { CatalogoItem, FaixaPagamento, ConfiguracaoPagamento } from '@/lib/types';
+import { Card, CardTitle } from '@/components/ui/Card';
+import { Field, Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
 
 export interface ItemDoFormulario extends NovoItem {
   id: string;
@@ -78,40 +82,48 @@ export function OrcamentoForm({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4">
-        <input placeholder="Nome do cliente" value={clienteNome} onChange={(e) => setClienteNome(e.target.value)} required className="rounded border px-2 py-1" />
-        <input
-          placeholder="Telefone (WhatsApp)"
-          value={clienteTelefone}
-          onChange={(e) => setClienteTelefone(formatarTelefoneInput(e.target.value))}
-          inputMode="numeric"
-          maxLength={15}
-          required
-          className="rounded border px-2 py-1"
-        />
-        <input
-          placeholder="Placa"
-          value={veiculoPlaca}
-          onChange={(e) => setVeiculoPlaca(formatarPlacaInput(e.target.value))}
-          maxLength={7}
-          required
-          className="rounded border px-2 py-1"
-        />
-        <input placeholder="Modelo/marca" value={veiculoModelo} onChange={(e) => setVeiculoModelo(e.target.value)} required className="rounded border px-2 py-1" />
+      <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Cliente">
+          <Input placeholder="Nome do cliente" value={clienteNome} onChange={(e) => setClienteNome(e.target.value)} required />
+        </Field>
+        <Field label="Telefone">
+          <Input
+            placeholder="Telefone (WhatsApp)"
+            value={clienteTelefone}
+            onChange={(e) => setClienteTelefone(formatarTelefoneInput(e.target.value))}
+            inputMode="numeric"
+            maxLength={15}
+            required
+          />
+        </Field>
+        <Field label="Placa">
+          <Input
+            placeholder="Placa"
+            value={veiculoPlaca}
+            onChange={(e) => setVeiculoPlaca(formatarPlacaInput(e.target.value))}
+            maxLength={7}
+            required
+          />
+        </Field>
+        <Field label="Veículo">
+          <Input placeholder="Modelo/marca" value={veiculoModelo} onChange={(e) => setVeiculoModelo(e.target.value)} required />
+        </Field>
+      </Card>
+
+      <div>
+        <CardTitle className="mb-3">Itens do orçamento</CardTitle>
+        <div className="space-y-4">
+          <ItemForm catalogo={catalogo} onAdicionar={adicionarItem} />
+          <ItemsTable itens={itens} onRemover={removerItem} />
+        </div>
       </div>
 
-      <ItemForm catalogo={catalogo} onAdicionar={adicionarItem} />
-      <ItemsTable itens={itens} onRemover={removerItem} />
       <CondicaoPagamentoResumo totalCentavos={total} faixas={faixas} config={config} />
 
-      {erro && (
-        <p role="alert" className="text-sm text-red-600">
-          {erro}
-        </p>
-      )}
-      <button type="button" onClick={salvar} disabled={salvando} className="rounded bg-black px-4 py-2 text-white disabled:opacity-50">
+      {erro && <Alert>{erro}</Alert>}
+      <Button type="button" onClick={salvar} loading={salvando} size="md">
         {salvando ? 'Salvando...' : 'Salvar orçamento'}
-      </button>
+      </Button>
     </div>
   );
 }

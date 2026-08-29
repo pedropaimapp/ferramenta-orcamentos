@@ -5,6 +5,8 @@ import { formatarReais, parseReaisParaCentavos } from '@/lib/format';
 import { encontrarFaixa, calcularEntradaMinima, dividirEmParcelas } from '@/lib/payment/faixas';
 import { calcularDescontoAVista, calcularCartaoPorto } from '@/lib/payment/alternativas';
 import type { FaixaPagamento, ConfiguracaoPagamento } from '@/lib/types';
+import { Card } from '@/components/ui/Card';
+import { Field, Input } from '@/components/ui/Input';
 
 export function CalculadoraPagamento({ faixas, config }: { faixas: FaixaPagamento[]; config: ConfiguracaoPagamento }) {
   const [valorServicoTexto, setValorServicoTexto] = useState('');
@@ -76,33 +78,27 @@ export function CalculadoraPagamento({ faixas, config }: { faixas: FaixaPagament
 
   return (
     <div className="max-w-xl space-y-6">
-      <div>
-        <label className="block text-sm font-medium" htmlFor="valor-servico">
-          Valor do serviço
-        </label>
-        <input
+      <Field label="Valor do serviço" htmlFor="valor-servico">
+        <Input
           id="valor-servico"
           placeholder="R$ 0,00"
           value={valorServicoTexto}
           onChange={(e) => setValorServicoTexto(e.target.value)}
-          className="mt-1 w-full rounded border px-2 py-1"
         />
-      </div>
+      </Field>
 
       {totalCentavos > 0 && faixaAtual && (
         <>
-          <div>
-            <label className="block text-sm font-medium" htmlFor="valor-entrada">
-              Valor de entrada
-            </label>
-            <input
-              id="valor-entrada"
-              placeholder="R$ 0,00"
-              value={valorEntradaExibido}
-              onChange={(e) => handleValorEntradaTexto(e.target.value)}
-              onBlur={handleValorEntradaBlur}
-              className="mt-1 w-full rounded border px-2 py-1"
-            />
+          <Card className="space-y-3">
+            <Field label="Valor de entrada" htmlFor="valor-entrada">
+              <Input
+                id="valor-entrada"
+                placeholder="R$ 0,00"
+                value={valorEntradaExibido}
+                onChange={(e) => handleValorEntradaTexto(e.target.value)}
+                onBlur={handleValorEntradaBlur}
+              />
+            </Field>
             <input
               type="range"
               aria-label="Percentual de entrada"
@@ -110,42 +106,42 @@ export function CalculadoraPagamento({ faixas, config }: { faixas: FaixaPagament
               max={100}
               value={percentualClamped}
               onChange={(e) => handlePercentualEntradaSlider(Number(e.target.value))}
-              className="mt-2 w-full"
+              className="w-full accent-porto-blue"
             />
-            <p className="text-xs text-gray-500">Mínimo de {percentualMinimo}% do valor do serviço.</p>
-          </div>
+            <p className="text-xs text-porto-gray">Mínimo de {percentualMinimo}% do valor do serviço.</p>
+          </Card>
 
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div className="rounded bg-black p-3 text-white">
-              <p className="text-xs uppercase">Entrada</p>
-              <p className="text-lg font-semibold">{formatarReais(entradaCentavos)}</p>
-              <p className="text-xs">{Math.round(percentualClamped)}% do total</p>
+          <div className="grid grid-cols-3 gap-3 text-sm">
+            <div className="rounded-2xl bg-porto-black p-4 text-white">
+              <p className="text-xs uppercase tracking-wide text-white/60">Entrada</p>
+              <p className="mt-1 text-lg font-bold">{formatarReais(entradaCentavos)}</p>
+              <p className="text-xs text-white/60">{Math.round(percentualClamped)}% do total</p>
             </div>
-            <div className="rounded border p-3">
-              <p className="text-xs uppercase">Saldo restante</p>
-              <p className="text-lg font-semibold">{formatarReais(saldoCentavos)}</p>
-            </div>
-            <div className="rounded border p-3">
-              <p className="text-xs uppercase">Máx. parcelas</p>
-              <p className="text-lg font-semibold">até {faixaAtual.parcelasSemJuros}x</p>
-            </div>
+            <Card className="p-4">
+              <p className="text-xs uppercase tracking-wide text-porto-gray">Saldo restante</p>
+              <p className="mt-1 text-lg font-bold text-porto-black">{formatarReais(saldoCentavos)}</p>
+            </Card>
+            <Card className="p-4">
+              <p className="text-xs uppercase tracking-wide text-porto-gray">Máx. parcelas</p>
+              <p className="mt-1 text-lg font-bold text-porto-black">até {faixaAtual.parcelasSemJuros}x</p>
+            </Card>
           </div>
 
           {cemPorCento && desconto ? (
-            <p className="rounded border p-3 text-sm">
+            <Card className="border-porto-blue/20 bg-porto-blue/[0.04] text-sm">
               Pagamento total via Pix/Débito: <strong>{formatarReais(desconto.valorComDescontoCentavos)}</strong> (
               {Math.round(config.percentualDescontoAVista * 100)}% de desconto)
-            </p>
+            </Card>
           ) : (
             <div className="space-y-1 text-sm">
-              <p className="font-medium">Opções de pagamento do saldo</p>
+              <p className="font-semibold text-porto-black">Opções de pagamento do saldo</p>
               {opcoesParcelamento.map(({ n, valorParcela }) => (
-                <p key={n}>
+                <p key={n} className="text-porto-black/80">
                   {n === 1 ? `À vista ${formatarReais(valorParcela)}` : `${n}x de ${formatarReais(valorParcela)}`}
                 </p>
               ))}
               {cartaoPorto && (
-                <p>
+                <p className="text-porto-black/80">
                   Alternativa: Cartão Porto em até {cartaoPorto.parcelas}x de {formatarReais(cartaoPorto.valorParcelaCentavos)} sem juros
                 </p>
               )}

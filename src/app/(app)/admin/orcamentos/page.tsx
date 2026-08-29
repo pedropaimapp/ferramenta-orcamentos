@@ -3,6 +3,7 @@ import { listarTodosOrcamentos } from '@/lib/orcamento/data';
 import { listarConsultores } from '@/lib/consultores/data';
 import { listarOficinas } from '@/lib/oficinas/data';
 import { AdminOrcamentosList } from './AdminOrcamentosList';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default async function AdminOrcamentosPage() {
   const supabase = await createServerClient();
@@ -17,7 +18,7 @@ export default async function AdminOrcamentosPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-lg font-semibold">Todos os orçamentos</h1>
+      <PageHeader title="Todos os orçamentos" />
       <AdminOrcamentosList orcamentosIniciais={orcamentos} consultoresPorId={consultoresPorId} oficinasPorId={oficinasPorId} />
     </div>
   );

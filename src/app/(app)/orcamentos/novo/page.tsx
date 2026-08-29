@@ -4,6 +4,7 @@ import { listarCatalogo } from '@/lib/catalogo/data';
 import { listarFaixas, obterConfiguracao } from '@/lib/pagamento/data';
 import { listarOficinas } from '@/lib/oficinas/data';
 import { NovoOrcamentoClient } from './NovoOrcamentoClient';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default async function NovoOrcamentoPage() {
   const consultor = await exigirConsultor();
@@ -18,7 +19,7 @@ export default async function NovoOrcamentoPage() {
 
   return (
     <div>
-      <h1 className="mb-4 text-lg font-semibold">Novo orçamento</h1>
+      <PageHeader title="Novo orçamento" />
       <NovoOrcamentoClient papel={consultor.papel} oficinas={oficinas} catalogo={catalogo} faixas={faixas} config={config} />
     </div>
   );

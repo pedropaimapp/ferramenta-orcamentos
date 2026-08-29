@@ -3,6 +3,12 @@
 import React, { useState, type FormEvent } from 'react';
 import { criarConsultor, atualizarConsultor, desativarConsultor } from '@/lib/consultores/actions';
 import type { Consultor, Oficina } from '@/lib/types';
+import { Card, CardTitle } from '@/components/ui/Card';
+import { Input, Select } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
+import { Badge } from '@/components/ui/Badge';
+import { Table, EmptyState } from '@/components/ui/Table';
 
 export function ConsultoresManager({
   consultoresIniciais,
@@ -65,84 +71,90 @@ export function ConsultoresManager({
 
   return (
     <div className="space-y-6">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Login</th>
-            <th>Papel</th>
-            <th>Oficinas</th>
-            <th>Status</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {consultores.map((c) => (
-            <tr key={c.id}>
-              <td>{c.nome}</td>
-              <td>{c.login}</td>
-              <td>{c.papel}</td>
-              <td>{c.oficinaIds.length > 0 ? c.oficinaIds.map((id) => nomeOficinasPorId[id] ?? '—').join(', ') : '—'}</td>
-              <td>{c.ativo ? 'Ativo' : 'Inativo'}</td>
-              <td className="space-x-2">
-                <button type="button" onClick={() => iniciarEdicao(c)}>
-                  Editar
-                </button>
-                {c.ativo && (
-                  <button type="button" onClick={() => desativar(c.id)}>
-                    Desativar
-                  </button>
-                )}
-              </td>
+      {consultores.length === 0 ? (
+        <EmptyState>Nenhum consultor cadastrado ainda.</EmptyState>
+      ) : (
+        <Table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Login</th>
+              <th>Papel</th>
+              <th>Oficinas</th>
+              <th>Status</th>
+              <th></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {consultores.map((c) => (
+              <tr key={c.id}>
+                <td className="font-medium text-porto-black">{c.nome}</td>
+                <td className="text-porto-gray">{c.login}</td>
+                <td className="capitalize">{c.papel}</td>
+                <td>{c.oficinaIds.length > 0 ? c.oficinaIds.map((id) => nomeOficinasPorId[id] ?? '—').join(', ') : '—'}</td>
+                <td>
+                  <Badge tone={c.ativo ? 'success' : 'neutral'}>{c.ativo ? 'Ativo' : 'Inativo'}</Badge>
+                </td>
+                <td>
+                  <div className="flex items-center gap-4">
+                    <button type="button" onClick={() => iniciarEdicao(c)} className="text-sm font-medium text-porto-blue hover:underline">
+                      Editar
+                    </button>
+                    {c.ativo && (
+                      <button type="button" onClick={() => desativar(c.id)} className="text-sm font-medium text-rose-600 hover:underline">
+                        Desativar
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
 
-      <form onSubmit={salvar} className="space-y-2 rounded border p-4">
-        <h2 className="font-medium">{editando ? 'Editar consultor' : 'Novo consultor'}</h2>
-        <input placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} required className="w-full rounded border px-2 py-1" />
-        <input
+      <Card as="form" onSubmit={salvar} className="max-w-xl space-y-3">
+        <CardTitle>{editando ? 'Editar consultor' : 'Novo consultor'}</CardTitle>
+        <Input placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
+        <Input
           placeholder="Login (e-mail)"
           value={login}
           onChange={(e) => setLogin(e.target.value)}
           required
           disabled={!!editando}
-          className="w-full rounded border px-2 py-1"
         />
         {!editando && (
-          <input placeholder="Senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required className="w-full rounded border px-2 py-1" />
+          <Input placeholder="Senha" type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required />
         )}
-        <select value={papel} onChange={(e) => setPapel(e.target.value as 'consultor' | 'admin')} className="w-full rounded border px-2 py-1">
+        <Select value={papel} onChange={(e) => setPapel(e.target.value as 'consultor' | 'admin')}>
           <option value="consultor">Consultor</option>
           <option value="admin">Admin</option>
-        </select>
-        <fieldset className="space-y-1 rounded border p-2">
-          <legend className="px-1 text-sm">Oficinas</legend>
-          {oficinas.length === 0 && <p className="text-sm text-gray-500">Nenhuma oficina cadastrada ainda.</p>}
+        </Select>
+        <fieldset className="space-y-2 rounded-lg border border-slate-300 p-3">
+          <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-porto-gray">Oficinas</legend>
+          {oficinas.length === 0 && <p className="text-sm text-porto-gray">Nenhuma oficina cadastrada ainda.</p>}
           {oficinas.map((o) => (
-            <label key={o.id} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={oficinaIds.includes(o.id)} onChange={() => alternarOficina(o.id)} />
+            <label key={o.id} className="flex items-center gap-2 text-sm text-porto-black">
+              <input
+                type="checkbox"
+                checked={oficinaIds.includes(o.id)}
+                onChange={() => alternarOficina(o.id)}
+                className="h-4 w-4 rounded border-slate-300 text-porto-blue focus:ring-porto-blue/30"
+              />
               {o.nome}
             </label>
           ))}
         </fieldset>
-        {erro && (
-          <p role="alert" className="text-sm text-red-600">
-            {erro}
-          </p>
-        )}
+        {erro && <Alert>{erro}</Alert>}
         <div className="flex gap-2">
-          <button type="submit" className="rounded bg-black px-3 py-1 text-white">
-            Salvar
-          </button>
+          <Button type="submit">Salvar</Button>
           {editando && (
-            <button type="button" onClick={() => iniciarEdicao(null)}>
+            <Button type="button" variant="outline" onClick={() => iniciarEdicao(null)}>
               Cancelar
-            </button>
+            </Button>
           )}
         </div>
-      </form>
+      </Card>
     </div>
   );
 }

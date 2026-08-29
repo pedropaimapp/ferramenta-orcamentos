@@ -3,6 +3,10 @@
 import React, { useState, type FormEvent } from 'react';
 import { parseReaisParaCentavos } from '@/lib/format';
 import type { CatalogoItem } from '@/lib/types';
+import { Card, CardTitle } from '@/components/ui/Card';
+import { Input, Select } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
 
 export interface NovoItem {
   catalogoItemId: string | null;
@@ -54,23 +58,25 @@ export function ItemForm({ catalogo, onAdicionar }: { catalogo: CatalogoItem[]; 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-2 rounded border p-4">
-      <h2 className="font-medium">Adicionar item</h2>
-      <select onChange={(e) => selecionarDoCatalogo(e.target.value)} value={catalogoItemId ?? ''} className="w-full rounded border px-2 py-1">
+    <Card as="form" onSubmit={handleSubmit} className="space-y-3">
+      <CardTitle>Adicionar item</CardTitle>
+      <Select onChange={(e) => selecionarDoCatalogo(e.target.value)} value={catalogoItemId ?? ''}>
         <option value="">Digitar item novo...</option>
         {catalogo.map((item) => (
           <option key={item.id} value={item.id}>
             {item.descricao}
           </option>
         ))}
-      </select>
-      <input placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} required className="w-full rounded border px-2 py-1" />
+      </Select>
+      <Input placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} required />
       <div className="flex gap-2" role="group" aria-label="Tipo">
         <button
           type="button"
           aria-pressed={tipo === 'peca'}
           onClick={() => setTipo('peca')}
-          className={`flex-1 rounded border px-2 py-1 ${tipo === 'peca' ? 'bg-black text-white' : ''}`}
+          className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+            tipo === 'peca' ? 'border-porto-black bg-porto-black text-white' : 'border-slate-300 text-porto-black hover:border-porto-blue'
+          }`}
         >
           Peça
         </button>
@@ -78,21 +84,17 @@ export function ItemForm({ catalogo, onAdicionar }: { catalogo: CatalogoItem[]; 
           type="button"
           aria-pressed={tipo === 'servico'}
           onClick={() => setTipo('servico')}
-          className={`flex-1 rounded border px-2 py-1 ${tipo === 'servico' ? 'bg-black text-white' : ''}`}
+          className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+            tipo === 'servico' ? 'border-porto-black bg-porto-black text-white' : 'border-slate-300 text-porto-black hover:border-porto-blue'
+          }`}
         >
           Serviço
         </button>
       </div>
-      <input placeholder="Quantidade" type="number" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} required className="w-full rounded border px-2 py-1" />
-      <input placeholder="Valor unitário (R$)" value={valor} onChange={(e) => setValor(e.target.value)} required className="w-full rounded border px-2 py-1" />
-      {erro && (
-        <p role="alert" className="text-sm text-red-600">
-          {erro}
-        </p>
-      )}
-      <button type="submit" className="rounded bg-black px-3 py-1 text-white">
-        Adicionar item
-      </button>
-    </form>
+      <Input placeholder="Quantidade" type="number" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} required />
+      <Input placeholder="Valor unitário (R$)" value={valor} onChange={(e) => setValor(e.target.value)} required />
+      {erro && <Alert>{erro}</Alert>}
+      <Button type="submit">Adicionar item</Button>
+    </Card>
   );
 }

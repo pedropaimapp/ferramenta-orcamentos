@@ -15,55 +15,159 @@
 // Also note: pdfkit's built-in fonts (Helvetica here) only support WinAnsi
 // encoding — stick to Latin-1 characters (Portuguese accents are fine) and
 // avoid symbols like "→"; they render as garbled glyphs instead of throwing.
+// For the same reason, the brand identity here comes from color/layout/logo
+// rather than a custom font file.
 //
 // Protocol: reads one JSON payload from stdin (see the `Payload` shape mirrored
 // below), writes the resulting PDF as raw bytes to stdout. Any error is reported
 // as `{"erro": "..."}` JSON on stderr with a non-zero exit code.
 
+import fs from 'node:fs';
+import path from 'node:path';
 import React from 'react';
-import { Document, Page, View, Text, Image, StyleSheet, renderToBuffer } from '@react-pdf/renderer';
+import { Document, Page, View, Text, Image, Svg, Line, StyleSheet, renderToBuffer } from '@react-pdf/renderer';
 
 const e = React.createElement;
+
+// Paleta oficial do guia de marca (Centro Automotivo Porto) — ver
+// "Guia - uso da marca Centro Automotivo Porto.pdf".
+const COR = {
+  azul: '#00A1FC',
+  azulEscuro: '#0046C0',
+  preto: '#0B0D10',
+  amarelo: '#E1E640',
+  offWhite: '#EFF4EF',
+  cinza: '#748A96',
+  cinzaClaro: '#E4E9EA',
+};
+
+const logoBranco = (() => {
+  try {
+    const logoPath = path.join(process.cwd(), 'public', 'brand', 'logo-white.png');
+    return fs.readFileSync(logoPath);
+  } catch {
+    return null;
+  }
+})();
 
 function formatarReais(centavos) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(centavos / 100);
 }
 
+function formatarData(iso) {
+  return new Date(iso).toLocaleDateString('pt-BR');
+}
+
 const styles = StyleSheet.create({
-  page: { padding: 32, fontSize: 11, fontFamily: 'Helvetica' },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 },
-  logo: { width: 60, height: 60, objectFit: 'contain' },
-  oficinaNome: { fontSize: 16, fontWeight: 700 },
-  secao: { marginBottom: 12 },
-  linha: { marginBottom: 4 },
-  tabelaHeader: { flexDirection: 'row', borderBottom: 1, paddingBottom: 4, marginBottom: 4, fontWeight: 700 },
-  tabelaLinha: { flexDirection: 'row', paddingVertical: 2 },
-  coluna: { flex: 1 },
+  page: { fontSize: 10, fontFamily: 'Helvetica', color: COR.preto },
+
+  // Faixa de cabeçalho escura, com a logo e os dados da oficina.
+  headerBand: {
+    backgroundColor: COR.preto,
+    paddingTop: 28,
+    paddingBottom: 16,
+    paddingHorizontal: 32,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  logo: { width: 108, height: 40 },
+  oficinaNome: { fontSize: 13, fontWeight: 700, color: '#FFFFFF', marginBottom: 3 },
+  oficinaDado: { fontSize: 8.5, color: '#C9D3D8', marginBottom: 1 },
+
+  body: { paddingHorizontal: 32, paddingTop: 20, paddingBottom: 60 },
+
+  tituloDocumento: { fontSize: 16, fontWeight: 700, color: COR.preto, marginBottom: 2 },
+  subtituloDocumento: { fontSize: 8.5, color: COR.cinza, marginBottom: 16 },
+
+  infoRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
+  infoCard: { flex: 1, backgroundColor: COR.offWhite, borderRadius: 8, padding: 10 },
+  infoLabel: { fontSize: 7.5, fontWeight: 700, color: COR.cinza, marginBottom: 3, textTransform: 'uppercase' },
+  infoValor: { fontSize: 10, fontWeight: 700, color: COR.preto, marginBottom: 1 },
+  infoValorSecundario: { fontSize: 9, color: COR.preto },
+
+  secaoTitulo: {
+    fontSize: 9,
+    fontWeight: 700,
+    color: COR.azulEscuro,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    marginTop: 14,
+  },
+  tabela: { borderRadius: 6, overflow: 'hidden', borderWidth: 1, borderColor: COR.cinzaClaro },
+  tabelaHeader: { flexDirection: 'row', backgroundColor: COR.offWhite, paddingVertical: 6, paddingHorizontal: 8 },
+  tabelaHeaderTexto: { fontSize: 8, fontWeight: 700, color: COR.cinza, textTransform: 'uppercase' },
+  tabelaLinha: { flexDirection: 'row', paddingVertical: 6, paddingHorizontal: 8, borderTopWidth: 1, borderTopColor: COR.cinzaClaro },
+  tabelaLinhaPar: { backgroundColor: '#F7F9F9' },
+  colDescricao: { flex: 3 },
+  colQtd: { flex: 1, textAlign: 'center' },
+  colValor: { flex: 1.4, textAlign: 'right' },
+
+  totalRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 },
+  totalLabel: { fontSize: 10, color: COR.cinza, marginRight: 8 },
+  totalValor: { fontSize: 13, fontWeight: 700, color: COR.preto },
+
+  pagamentoCard: { backgroundColor: COR.azulEscuro, borderRadius: 10, padding: 16, marginTop: 20 },
+  pagamentoTitulo: { fontSize: 9, fontWeight: 700, color: COR.amarelo, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  pagamentoLinha: { fontSize: 10, color: '#FFFFFF', marginBottom: 5, lineHeight: 1.3 },
+  pagamentoDestaque: { fontWeight: 700 },
+
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 32,
+    paddingTop: 10,
+    paddingBottom: 18,
+    borderTopWidth: 1,
+    borderTopColor: COR.cinzaClaro,
+  },
+  footerTexto: { fontSize: 8, color: COR.cinza },
 });
+
+/** Recria as listras diagonais do guia de marca (faixa de pedestre) via SVG. */
+function listrasDiagonais() {
+  const linhas = [];
+  const total = 9;
+  for (let i = 0; i < total; i++) {
+    const x = i * 15;
+    linhas.push(e(Line, { key: i, x1: x, y1: 20, x2: x + 10, y2: 0, stroke: COR.azul, strokeWidth: 4 }));
+  }
+  return e(Svg, { width: 150, height: 20, style: { position: 'absolute', right: 0, bottom: -1 } }, ...linhas);
+}
+
+function linhaTabela(item, index) {
+  const subtotal = item.quantidade * item.valorUnitarioCentavos;
+  return e(
+    View,
+    { key: item.id, style: [styles.tabelaLinha, index % 2 === 1 ? styles.tabelaLinhaPar : null] },
+    e(Text, { style: styles.colDescricao }, item.descricao),
+    e(Text, { style: styles.colQtd }, String(item.quantidade)),
+    e(Text, { style: styles.colValor }, formatarReais(item.valorUnitarioCentavos)),
+    e(Text, { style: styles.colValor }, formatarReais(subtotal))
+  );
+}
 
 function tabelaItens(titulo, itens) {
   if (itens.length === 0) return null;
   return e(
     View,
-    { style: styles.secao },
-    e(Text, { style: { fontWeight: 700, marginBottom: 4 } }, titulo),
+    { style: { marginTop: 4 } },
+    e(Text, { style: styles.secaoTitulo }, titulo),
     e(
       View,
-      { style: styles.tabelaHeader },
-      e(Text, { style: styles.coluna }, 'Descrição'),
-      e(Text, { style: styles.coluna }, 'Qtd'),
-      e(Text, { style: styles.coluna }, 'Valor unit.'),
-      e(Text, { style: styles.coluna }, 'Subtotal')
-    ),
-    ...itens.map((item) =>
+      { style: styles.tabela },
       e(
         View,
-        { key: item.id, style: styles.tabelaLinha },
-        e(Text, { style: styles.coluna }, item.descricao),
-        e(Text, { style: styles.coluna }, String(item.quantidade)),
-        e(Text, { style: styles.coluna }, formatarReais(item.valorUnitarioCentavos)),
-        e(Text, { style: styles.coluna }, formatarReais(item.quantidade * item.valorUnitarioCentavos))
-      )
+        { style: styles.tabelaHeader },
+        e(Text, { style: [styles.tabelaHeaderTexto, styles.colDescricao] }, 'Descricao'),
+        e(Text, { style: [styles.tabelaHeaderTexto, styles.colQtd] }, 'Qtd'),
+        e(Text, { style: [styles.tabelaHeaderTexto, styles.colValor] }, 'Valor unit.'),
+        e(Text, { style: [styles.tabelaHeaderTexto, styles.colValor] }, 'Subtotal')
+      ),
+      ...itens.map(linhaTabela)
     )
   );
 }
@@ -78,51 +182,104 @@ function orcamentoPdfDocument({ oficina, consultorNome, orcamento, itens, totalC
     e(
       Page,
       { size: 'A4', style: styles.page },
+
+      // Cabecalho de marca.
       e(
         View,
-        { style: styles.header },
-        oficina.logoUrl ? e(Image, { src: oficina.logoUrl, style: styles.logo }) : null,
+        { style: styles.headerBand },
+        logoBranco ? e(Image, { src: logoBranco, style: styles.logo }) : e(Text, { style: styles.oficinaNome }, 'TOP STOP'),
         e(
           View,
-          null,
+          { style: { alignItems: 'flex-end' } },
           e(Text, { style: styles.oficinaNome }, oficina.nome),
-          e(Text, null, oficina.endereco),
-          e(Text, null, oficina.telefone)
-        )
+          oficina.endereco ? e(Text, { style: styles.oficinaDado }, oficina.endereco) : null,
+          oficina.telefone ? e(Text, { style: styles.oficinaDado }, oficina.telefone) : null
+        ),
+        listrasDiagonais()
       ),
+
       e(
         View,
-        { style: styles.secao },
-        e(Text, null, `Cliente: ${orcamento.clienteNome}`),
-        e(Text, null, `Veículo: ${orcamento.veiculoModelo} - Placa ${orcamento.veiculoPlaca}`),
-        e(Text, null, `Consultor: ${consultorNome}`)
-      ),
-      tabelaItens('Peças', pecas),
-      tabelaItens('Serviços', servicos),
-      e(
-        View,
-        { style: styles.secao },
-        e(Text, { style: styles.linha }, `Total: ${formatarReais(totalCentavos)}`),
+        { style: styles.body },
+
+        e(Text, { style: styles.tituloDocumento }, 'Orcamento de servicos'),
         e(
           Text,
-          { style: styles.linha },
-          `Desconto à vista no Pix/Débito: ${formatarReais(desconto.descontoCentavos)} -> ${formatarReais(desconto.valorComDescontoCentavos)}`
+          { style: styles.subtituloDocumento },
+          `Emitido em ${formatarData(orcamento.createdAt)} - valido por ${orcamento.validadeDias} dias`
         ),
+
+        // Dados do cliente / veiculo / consultor.
         e(
-          Text,
-          { style: styles.linha },
-          `Entrada mínima: ${formatarReais(entradaCentavos)} + ${parcelas.length}x de ${formatarReais(parcelas[0])} no crédito sem juros`
+          View,
+          { style: styles.infoRow },
+          e(
+            View,
+            { style: styles.infoCard },
+            e(Text, { style: styles.infoLabel }, 'Cliente'),
+            e(Text, { style: styles.infoValor }, orcamento.clienteNome)
+          ),
+          e(
+            View,
+            { style: styles.infoCard },
+            e(Text, { style: styles.infoLabel }, 'Veiculo'),
+            e(Text, { style: styles.infoValor }, orcamento.veiculoModelo),
+            e(Text, { style: styles.infoValorSecundario }, `Placa ${orcamento.veiculoPlaca}`)
+          ),
+          e(
+            View,
+            { style: styles.infoCard },
+            e(Text, { style: styles.infoLabel }, 'Consultor'),
+            e(Text, { style: styles.infoValor }, consultorNome)
+          )
         ),
+
+        tabelaItens('Pecas', pecas),
+        tabelaItens('Servicos', servicos),
+
         e(
-          Text,
-          { style: styles.linha },
-          `Alternativa: Cartão Porto em até ${cartaoPorto.parcelas}x de ${formatarReais(cartaoPorto.valorParcelaCentavos)} sem juros`
+          View,
+          { style: styles.totalRow },
+          e(Text, { style: styles.totalLabel }, 'Total do orcamento'),
+          e(Text, { style: styles.totalValor }, formatarReais(totalCentavos))
+        ),
+
+        // Condicoes de pagamento, em destaque.
+        e(
+          View,
+          { style: styles.pagamentoCard },
+          e(Text, { style: styles.pagamentoTitulo }, 'Condicoes de pagamento'),
+          e(
+            Text,
+            { style: styles.pagamentoLinha },
+            e(Text, { style: styles.pagamentoDestaque }, `Entrada minima de ${formatarReais(entradaCentavos)}`),
+            ` + ${parcelas.length}x de ${formatarReais(parcelas[0])} no credito sem juros`
+          ),
+          e(
+            Text,
+            { style: styles.pagamentoLinha },
+            'Desconto a vista no Pix/Debito: ',
+            e(Text, { style: styles.pagamentoDestaque }, formatarReais(desconto.descontoCentavos)),
+            ` -> total de ${formatarReais(desconto.valorComDescontoCentavos)}`
+          ),
+          e(
+            Text,
+            { style: [styles.pagamentoLinha, { marginBottom: 0 }] },
+            'Alternativa: Cartao Porto em ate ',
+            e(Text, { style: styles.pagamentoDestaque }, `${cartaoPorto.parcelas}x de ${formatarReais(cartaoPorto.valorParcelaCentavos)}`),
+            ' sem juros'
+          )
         )
       ),
+
       e(
-        Text,
-        null,
-        `Orçamento emitido em ${new Date(orcamento.createdAt).toLocaleDateString('pt-BR')}, válido por ${orcamento.validadeDias} dias.`
+        View,
+        { style: styles.footer },
+        e(
+          Text,
+          { style: styles.footerTexto },
+          `Orcamento valido por ${orcamento.validadeDias} dias a partir da emissao. Top Stop Centro Automotivo.`
+        )
       )
     )
   );

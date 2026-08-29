@@ -5,6 +5,12 @@ import { createBrowserClient } from '@/lib/supabase/client';
 import { criarItemCatalogo, atualizarItemCatalogo, removerItemCatalogo } from '@/lib/catalogo/data';
 import { formatarReais, parseReaisParaCentavos } from '@/lib/format';
 import type { CatalogoItem } from '@/lib/types';
+import { Card, CardTitle } from '@/components/ui/Card';
+import { Input, Select } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
+import { Badge } from '@/components/ui/Badge';
+import { Table, EmptyState } from '@/components/ui/Table';
 
 export function CatalogoManager({ itensIniciais }: { itensIniciais: CatalogoItem[] }) {
   const [itens, setItens] = useState(itensIniciais);
@@ -57,61 +63,63 @@ export function CatalogoManager({ itensIniciais }: { itensIniciais: CatalogoItem
 
   return (
     <div className="space-y-6">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr>
-            <th>Descrição</th>
-            <th>Tipo</th>
-            <th>Marca/Código</th>
-            <th>Valor</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {itens.map((i) => (
-            <tr key={i.id}>
-              <td>{i.descricao}</td>
-              <td>{i.tipo === 'peca' ? 'Peça' : 'Serviço'}</td>
-              <td>{i.marcaCodigo}</td>
-              <td>{formatarReais(i.valorPadraoCentavos)}</td>
-              <td className="space-x-2">
-                <button type="button" onClick={() => iniciarEdicao(i)}>
-                  Editar
-                </button>
-                <button type="button" onClick={() => remover(i.id)}>
-                  Remover
-                </button>
-              </td>
+      {itens.length === 0 ? (
+        <EmptyState>Nenhum item cadastrado ainda.</EmptyState>
+      ) : (
+        <Table>
+          <thead>
+            <tr>
+              <th>Descrição</th>
+              <th>Tipo</th>
+              <th>Marca/Código</th>
+              <th>Valor</th>
+              <th></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {itens.map((i) => (
+              <tr key={i.id}>
+                <td className="font-medium text-porto-black">{i.descricao}</td>
+                <td>
+                  <Badge tone={i.tipo === 'peca' ? 'info' : 'neutral'}>{i.tipo === 'peca' ? 'Peça' : 'Serviço'}</Badge>
+                </td>
+                <td>{i.marcaCodigo}</td>
+                <td>{formatarReais(i.valorPadraoCentavos)}</td>
+                <td>
+                  <div className="flex items-center gap-4">
+                    <button type="button" onClick={() => iniciarEdicao(i)} className="text-sm font-medium text-porto-blue hover:underline">
+                      Editar
+                    </button>
+                    <button type="button" onClick={() => remover(i.id)} className="text-sm font-medium text-rose-600 hover:underline">
+                      Remover
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
 
-      <form onSubmit={salvar} className="space-y-2 rounded border p-4">
-        <h2 className="font-medium">{editando ? 'Editar item' : 'Novo item'}</h2>
-        <input placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} required className="w-full rounded border px-2 py-1" />
-        <select value={tipo} onChange={(e) => setTipo(e.target.value as 'peca' | 'servico')} className="w-full rounded border px-2 py-1">
+      <Card as="form" onSubmit={salvar} className="max-w-xl space-y-3">
+        <CardTitle>{editando ? 'Editar item' : 'Novo item'}</CardTitle>
+        <Input placeholder="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} required />
+        <Select value={tipo} onChange={(e) => setTipo(e.target.value as 'peca' | 'servico')}>
           <option value="peca">Peça</option>
           <option value="servico">Serviço</option>
-        </select>
-        <input placeholder="Marca/Código (opcional)" value={marcaCodigo} onChange={(e) => setMarcaCodigo(e.target.value)} className="w-full rounded border px-2 py-1" />
-        <input placeholder="Valor (R$)" value={valor} onChange={(e) => setValor(e.target.value)} required className="w-full rounded border px-2 py-1" />
-        {erro && (
-          <p role="alert" className="text-sm text-red-600">
-            {erro}
-          </p>
-        )}
+        </Select>
+        <Input placeholder="Marca/Código (opcional)" value={marcaCodigo} onChange={(e) => setMarcaCodigo(e.target.value)} />
+        <Input placeholder="Valor (R$)" value={valor} onChange={(e) => setValor(e.target.value)} required />
+        {erro && <Alert>{erro}</Alert>}
         <div className="flex gap-2">
-          <button type="submit" className="rounded bg-black px-3 py-1 text-white">
-            Salvar
-          </button>
+          <Button type="submit">Salvar</Button>
           {editando && (
-            <button type="button" onClick={() => iniciarEdicao(null)}>
+            <Button type="button" variant="outline" onClick={() => iniciarEdicao(null)}>
               Cancelar
-            </button>
+            </Button>
           )}
         </div>
-      </form>
+      </Card>
     </div>
   );
 }

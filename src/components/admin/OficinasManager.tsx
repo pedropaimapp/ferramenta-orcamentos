@@ -4,6 +4,11 @@ import React, { useState, type FormEvent } from 'react';
 import { createBrowserClient } from '@/lib/supabase/client';
 import { criarOficina, atualizarOficina, enviarLogoOficina } from '@/lib/oficinas/data';
 import type { Oficina } from '@/lib/types';
+import { Card, CardTitle } from '@/components/ui/Card';
+import { Field, Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
+import { Table, EmptyState } from '@/components/ui/Table';
 
 export function OficinasManager({ oficinasIniciais }: { oficinasIniciais: Oficina[] }) {
   const [oficinas, setOficinas] = useState(oficinasIniciais);
@@ -51,68 +56,63 @@ export function OficinasManager({ oficinasIniciais }: { oficinasIniciais: Oficin
 
   return (
     <div className="space-y-6">
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Endereço</th>
-            <th>Telefone</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {oficinas.map((o) => (
-            <tr key={o.id}>
-              <td>{o.nome}</td>
-              <td>{o.endereco}</td>
-              <td>{o.telefone}</td>
-              <td>
-                <button type="button" onClick={() => iniciarEdicao(o)}>
-                  Editar
-                </button>
-              </td>
+      {oficinas.length === 0 ? (
+        <EmptyState>Nenhuma oficina cadastrada ainda.</EmptyState>
+      ) : (
+        <Table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Endereço</th>
+              <th>Telefone</th>
+              <th></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {oficinas.map((o) => (
+              <tr key={o.id}>
+                <td className="font-medium text-porto-black">{o.nome}</td>
+                <td className="text-porto-gray">{o.endereco}</td>
+                <td>{o.telefone}</td>
+                <td>
+                  <button type="button" onClick={() => iniciarEdicao(o)} className="text-sm font-medium text-porto-blue hover:underline">
+                    Editar
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      )}
 
-      <form onSubmit={salvar} className="space-y-2 rounded border p-4">
-        <h2 className="font-medium">{editando ? 'Editar oficina' : 'Nova oficina'}</h2>
-        <input placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} required className="w-full rounded border px-2 py-1" />
-        <input placeholder="Endereço" value={endereco} onChange={(e) => setEndereco(e.target.value)} required className="w-full rounded border px-2 py-1" />
-        <input placeholder="Telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)} required className="w-full rounded border px-2 py-1" />
-        <div>
-          <label className="block text-sm" htmlFor="logo-oficina">
-            Logo (opcional)
-          </label>
+      <Card as="form" onSubmit={salvar} className="max-w-xl space-y-3">
+        <CardTitle>{editando ? 'Editar oficina' : 'Nova oficina'}</CardTitle>
+        <Input placeholder="Nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
+        <Input placeholder="Endereço" value={endereco} onChange={(e) => setEndereco(e.target.value)} required />
+        <Input placeholder="Telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)} required />
+        <Field label="Logo (opcional)" htmlFor="logo-oficina">
           {editando?.logoUrl && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={editando.logoUrl} alt={`Logo atual de ${editando.nome}`} className="mb-1 h-12 w-12 object-contain" />
+            <img src={editando.logoUrl} alt={`Logo atual de ${editando.nome}`} className="mb-2 h-12 w-12 rounded-lg border border-slate-200 object-contain p-1" />
           )}
           <input
             id="logo-oficina"
             type="file"
             accept="image/*"
             onChange={(e) => setArquivoLogo(e.target.files?.[0] ?? null)}
-            className="w-full text-sm"
+            className="block w-full text-sm text-porto-gray file:mr-3 file:rounded-lg file:border-0 file:bg-porto-offwhite file:px-3 file:py-2 file:text-sm file:font-medium file:text-porto-black hover:file:bg-slate-200"
           />
-        </div>
-        {erro && (
-          <p role="alert" className="text-sm text-red-600">
-            {erro}
-          </p>
-        )}
+        </Field>
+        {erro && <Alert>{erro}</Alert>}
         <div className="flex gap-2">
-          <button type="submit" className="rounded bg-black px-3 py-1 text-white">
-            Salvar
-          </button>
+          <Button type="submit">Salvar</Button>
           {editando && (
-            <button type="button" onClick={() => iniciarEdicao(null)}>
+            <Button type="button" variant="outline" onClick={() => iniciarEdicao(null)}>
               Cancelar
-            </button>
+            </Button>
           )}
         </div>
-      </form>
+      </Card>
     </div>
   );
 }

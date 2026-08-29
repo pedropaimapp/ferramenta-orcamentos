@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { formatarReais } from '@/lib/format';
+import { Table, EmptyState } from '@/components/ui/Table';
+import { Badge } from '@/components/ui/Badge';
 
 export interface ItemListado {
   id: string;
@@ -13,11 +15,11 @@ export interface ItemListado {
 
 export function ItemsTable({ itens, onRemover }: { itens: ItemListado[]; onRemover: (id: string) => void }) {
   if (itens.length === 0) {
-    return <p className="text-sm text-gray-500">Nenhum item adicionado ainda.</p>;
+    return <EmptyState>Nenhum item adicionado ainda.</EmptyState>;
   }
 
   return (
-    <table className="w-full text-left text-sm">
+    <Table>
       <thead>
         <tr>
           <th>Descrição</th>
@@ -31,19 +33,21 @@ export function ItemsTable({ itens, onRemover }: { itens: ItemListado[]; onRemov
       <tbody>
         {itens.map((item) => (
           <tr key={item.id}>
-            <td>{item.descricao}</td>
-            <td>{item.tipo === 'peca' ? 'Peça' : 'Serviço'}</td>
+            <td className="font-medium text-porto-black">{item.descricao}</td>
+            <td>
+              <Badge tone={item.tipo === 'peca' ? 'info' : 'neutral'}>{item.tipo === 'peca' ? 'Peça' : 'Serviço'}</Badge>
+            </td>
             <td>{item.quantidade}</td>
             <td>{formatarReais(item.valorUnitarioCentavos)}</td>
-            <td>{formatarReais(item.quantidade * item.valorUnitarioCentavos)}</td>
+            <td className="font-semibold text-porto-black">{formatarReais(item.quantidade * item.valorUnitarioCentavos)}</td>
             <td>
-              <button type="button" onClick={() => onRemover(item.id)}>
+              <button type="button" onClick={() => onRemover(item.id)} className="text-sm font-medium text-rose-600 hover:underline">
                 Remover
               </button>
             </td>
           </tr>
         ))}
       </tbody>
-    </table>
+    </Table>
   );
 }

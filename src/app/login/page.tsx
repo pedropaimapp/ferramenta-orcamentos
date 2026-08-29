@@ -3,6 +3,11 @@
 import React, { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase/client';
+import { Logo } from '@/components/ui/Logo';
+import { StripeAccent } from '@/components/ui/StripeAccent';
+import { Field, Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,40 +32,29 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-lg bg-white p-8 shadow">
-        <h1 className="text-xl font-semibold">Entrar</h1>
-        <div>
-          <label className="block text-sm font-medium" htmlFor="login">Login</label>
-          <input
-            id="login"
-            type="text"
-            required
-            value={login}
-            onChange={(e) => setLogin(e.target.value)}
-            className="mt-1 w-full rounded border px-3 py-2"
-          />
+    <main className="flex min-h-screen items-center justify-center bg-porto-black px-4">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex justify-center">
+          <Logo variant="white" className="h-12" priority />
         </div>
-        <div>
-          <label className="block text-sm font-medium" htmlFor="senha">Senha</label>
-          <input
-            id="senha"
-            type="password"
-            required
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            className="mt-1 w-full rounded border px-3 py-2"
-          />
-        </div>
-        {erro && (
-          <p className="text-sm text-red-600" role="alert">
-            {erro}
-          </p>
-        )}
-        <button type="submit" disabled={carregando} className="w-full rounded bg-black px-3 py-2 text-white disabled:opacity-50">
-          {carregando ? 'Entrando...' : 'Entrar'}
-        </button>
-      </form>
+        <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl bg-white p-8 shadow-xl shadow-black/30">
+          <div>
+            <h1 className="font-heading text-xl font-bold text-porto-black">Entrar</h1>
+            <p className="text-sm text-porto-gray">Acesse sua conta para montar orçamentos.</p>
+          </div>
+          <Field label="Login" htmlFor="login">
+            <Input id="login" type="text" required value={login} onChange={(e) => setLogin(e.target.value)} />
+          </Field>
+          <Field label="Senha" htmlFor="senha">
+            <Input id="senha" type="password" required value={senha} onChange={(e) => setSenha(e.target.value)} />
+          </Field>
+          {erro && <Alert>{erro}</Alert>}
+          <Button type="submit" loading={carregando} className="w-full">
+            {carregando ? 'Entrando...' : 'Entrar'}
+          </Button>
+        </form>
+        <StripeAccent className="mt-8" />
+      </div>
     </main>
   );
 }

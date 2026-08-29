@@ -36,7 +36,14 @@ const pdfScriptDependencies = dependencyClosure(['react', '@react-pdf/renderer']
 
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
-    '/orcamentos/[id]/pdf/**': ['./scripts/render-orcamento-pdf.mjs', ...pdfScriptDependencies],
+    // The PDF script reads the Top Stop logo straight off disk (see the
+    // comment in render-orcamento-pdf.mjs) — the file tracer can't see that
+    // either, same as the script itself, so it needs the same explicit help.
+    '/orcamentos/[id]/pdf/**': [
+      './scripts/render-orcamento-pdf.mjs',
+      './public/brand/**',
+      ...pdfScriptDependencies,
+    ],
   },
 };
 
