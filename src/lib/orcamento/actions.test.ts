@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { salvarNovoOrcamento, salvarEdicaoOrcamento, mudarStatusOrcamento } from './actions';
+import { salvarNovoOrcamento, salvarEdicaoOrcamento, mudarStatusOrcamento, duplicarOrcamento } from './actions';
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
@@ -10,10 +10,12 @@ vi.mock('../supabase/server', () => ({ createServerClient: async () => ({}) }));
 const criarOrcamentoMock = vi.fn();
 const atualizarOrcamentoMock = vi.fn();
 const atualizarStatusOrcamentoMock = vi.fn();
+const obterOrcamentoComItensMock = vi.fn();
 vi.mock('./data', () => ({
   criarOrcamento: (...args: unknown[]) => criarOrcamentoMock(...args),
   atualizarOrcamento: (...args: unknown[]) => atualizarOrcamentoMock(...args),
   atualizarStatusOrcamento: (...args: unknown[]) => atualizarStatusOrcamentoMock(...args),
+  obterOrcamentoComItens: (...args: unknown[]) => obterOrcamentoComItensMock(...args),
 }));
 
 const dados = { clienteNome: 'Maria', clienteTelefone: '5511987654321', veiculoPlaca: 'ABC1D23', veiculoModelo: 'Onix', itens: [] };
@@ -62,5 +64,34 @@ describe('mudarStatusOrcamento', () => {
     exigirConsultorMock.mockResolvedValue({ id: 'c1', papel: 'consultor', oficinaId: 'of1' });
     await mudarStatusOrcamento('o1', 'enviado');
     expect(atualizarStatusOrcamentoMock).toHaveBeenCalledWith({}, 'o1', 'enviado');
+  });
+});
+
+describe('duplicarOrcamento', () => {
+  beforeEach(() => {
+    obterOrcamentoComItensMock.mockReset();
+    criarOrcamentoMock.mockReset();
+  });
+
+  it('cria um novo orçamento com os mesmos dados e itens do original', async () => {
+    exigirConsultorMock.mockResolvedValue({ id: 'c1', papel: 'consultor', oficinaId: 'of1' });
+    obterOrcamentoComItensMock.mockResolvedValue({
+      orcamento: { id: 'o1', clienteNome: 'Maria', clienteTelefone: '5511987654321', veiculoPlaca: 'ABC1D23', veiculoModelo: 'Onix', oficinaId: 'of1' },
+      itens: [{ id: 'i1', orcamentoId: 'o1', catalogoItemId: null, descricao: 'Troca de óleo', tipo: 'servico', quantidade: 1, valorUnitarioCentavos: 10000 }],
+    });
+    criarOrcamentoMock.mockResolvedValue({ id: 'o2' });
+
+    const resultado = await duplicarOrcamento('o1');
+
+    expect(criarOrcamentoMock).toHaveBeenCalledWith(
+      {},
+      'c1',
+      'of1',
+      expect.objectContaining({
+        clienteNome: 'Maria',
+        itens: [{ catalogoItemId: null, descricao: 'Troca de óleo', tipo: 'servico', quantidade: 1, valorUnitarioCentavos: 10000 }],
+      })
+    );
+    expect(resultado).toEqual({ id: 'o2' });
   });
 });
