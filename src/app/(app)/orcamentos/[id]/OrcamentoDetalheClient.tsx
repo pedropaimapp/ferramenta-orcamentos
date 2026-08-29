@@ -4,6 +4,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { OrcamentoForm, type DadosOrcamentoFormulario } from '@/components/orcamento/OrcamentoForm';
 import { salvarEdicaoOrcamento, mudarStatusOrcamento } from '@/lib/orcamento/actions';
+import { montarLinkWhatsApp, montarMensagemOrcamento } from '@/lib/orcamento/whatsapp';
+import { calcularTotalItens } from '@/lib/orcamento/totals';
+import { encontrarFaixa, calcularEntradaMinima, dividirEmParcelas } from '@/lib/payment/faixas';
+import { calcularDescontoAVista, calcularCartaoPorto } from '@/lib/payment/alternativas';
 import type { CatalogoItem, FaixaPagamento, ConfiguracaoPagamento, Orcamento, OrcamentoItem, StatusOrcamento } from '@/lib/types';
 
 const STATUS_LABEL: Record<StatusOrcamento, string> = {
@@ -19,15 +23,57 @@ export function OrcamentoDetalheClient({
   catalogo,
   faixas,
   config,
+  oficinaNome,
+  consultorNome,
 }: {
   orcamento: Orcamento;
   itens: OrcamentoItem[];
   catalogo: CatalogoItem[];
   faixas: FaixaPagamento[];
   config: ConfiguracaoPagamento;
+  oficinaNome: string;
+  consultorNome: string;
 }) {
   const [status, setStatus] = useState(orcamento.status);
   const [erroStatus, setErroStatus] = useState<string | null>(null);
+  const [erroWhatsApp, setErroWhatsApp] = useState<string | null>(null);
+
+  function enviarPorWhatsApp() {
+    setErroWhatsApp(null);
+    try {
+      const totalCentavos = calcularTotalItens(itens);
+      const faixa = encontrarFaixa(totalCentavos, faixas);
+      const entradaCentavos = calcularEntradaMinima(totalCentavos, config);
+      const parcelas = dividirEmParcelas(totalCentavos - entradaCentavos, faixa.parcelasSemJuros);
+      const desconto = calcularDescontoAVista(totalCentavos, config);
+      const cartaoPorto = calcularCartaoPorto(totalCentavos, config);
+
+      const mensagem = montarMensagemOrcamento({
+        oficinaNome,
+        consultorNome,
+        clienteNome: orcamento.clienteNome,
+        veiculoModelo: orcamento.veiculoModelo,
+        veiculoPlaca: orcamento.veiculoPlaca,
+        itens: itens.map((item) => ({
+          descricao: item.descricao,
+          tipo: item.tipo,
+          quantidade: item.quantidade,
+          valorTotalCentavos: item.quantidade * item.valorUnitarioCentavos,
+        })),
+        totalCentavos,
+        descontoCentavos: desconto.descontoCentavos,
+        valorComDescontoCentavos: desconto.valorComDescontoCentavos,
+        entradaCentavos,
+        parcelas,
+        cartaoPorto,
+        validadeDias: orcamento.validadeDias,
+      });
+
+      window.open(montarLinkWhatsApp(orcamento.clienteTelefone, mensagem), '_blank');
+    } catch (err) {
+      setErroWhatsApp(err instanceof Error ? err.message : 'Erro desconhecido');
+    }
+  }
 
   async function aoSalvar(dados: DadosOrcamentoFormulario) {
     await salvarEdicaoOrcamento(orcamento.id, dados);
@@ -79,6 +125,14 @@ export function OrcamentoDetalheClient({
       <Link href={`/orcamentos/${orcamento.id}/pdf`} target="_blank" rel="noreferrer" className="inline-block rounded border px-3 py-1 text-sm">
         Baixar PDF
       </Link>
+      {erroWhatsApp && (
+        <p role="alert" className="text-sm text-red-600">
+          {erroWhatsApp}
+        </p>
+      )}
+      <button type="button" onClick={enviarPorWhatsApp} className="rounded border px-3 py-1 text-sm">
+        Enviar por WhatsApp
+      </button>
     </div>
   );
 }

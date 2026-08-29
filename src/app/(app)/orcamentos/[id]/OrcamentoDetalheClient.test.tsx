@@ -37,14 +37,14 @@ describe('OrcamentoDetalheClient', () => {
   });
 
   it('pré-carrega o formulário com os dados existentes', () => {
-    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} />);
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />);
     expect(screen.getByDisplayValue('Maria')).toBeInTheDocument();
     expect(screen.getByText('Troca de óleo')).toBeInTheDocument();
   });
 
   it('muda o status do orçamento', async () => {
     mudarStatusOrcamentoMock.mockResolvedValue(undefined);
-    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} />);
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />);
 
     fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'enviado' } });
 
@@ -53,7 +53,7 @@ describe('OrcamentoDetalheClient', () => {
 
   it('salva edições através de salvarEdicaoOrcamento com o id correto', async () => {
     salvarEdicaoOrcamentoMock.mockResolvedValue(undefined);
-    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} />);
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Salvar orçamento' }));
 
@@ -61,7 +61,45 @@ describe('OrcamentoDetalheClient', () => {
   });
 
   it('mostra um link para baixar o PDF do orçamento', () => {
-    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} />);
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />);
     expect(screen.getByRole('link', { name: 'Baixar PDF' })).toHaveAttribute('href', '/orcamentos/o1/pdf');
+  });
+});
+
+describe('envio por WhatsApp', () => {
+  it('abre o link do WhatsApp com a mensagem formatada', () => {
+    const openMock = vi.fn();
+    vi.stubGlobal('open', openMock);
+
+    render(
+      <OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar por WhatsApp' }));
+
+    expect(openMock).toHaveBeenCalledTimes(1);
+    const [url] = openMock.mock.calls[0];
+    expect(url).toContain('https://wa.me/5511987654321');
+    expect(decodeURIComponent(url)).toContain('Troca de óleo');
+
+    vi.unstubAllGlobals();
+  });
+
+  it('mostra erro quando o telefone do cliente é inválido', () => {
+    render(
+      <OrcamentoDetalheClient
+        orcamento={{ ...orcamento, clienteTelefone: '123' }}
+        itens={itens}
+        catalogo={[]}
+        faixas={faixas}
+        config={config}
+        oficinaNome="Top Stop Centro"
+        consultorNome="Ana"
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar por WhatsApp' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Telefone inválido');
   });
 });
