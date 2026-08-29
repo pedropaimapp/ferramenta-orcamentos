@@ -9,6 +9,10 @@ import type { FaixaPagamento, ConfiguracaoPagamento } from '@/lib/types';
 export function CalculadoraPagamento({ faixas, config }: { faixas: FaixaPagamento[]; config: ConfiguracaoPagamento }) {
   const [valorServicoTexto, setValorServicoTexto] = useState('');
   const [percentualEntrada, setPercentualEntrada] = useState(config.percentualEntradaMinima * 100);
+  // Texto bruto que o usuário está digitando no campo "Valor de entrada". Enquanto não for
+  // null, o campo exibe exatamente o que foi digitado (sem reformatar a cada tecla); volta a
+  // null (e passa a refletir o valor calculado) ao perder o foco ou ao mexer no slider.
+  const [valorEntradaTexto, setValorEntradaTexto] = useState<string | null>(null);
 
   let totalCentavos = 0;
   try {
@@ -32,7 +36,11 @@ export function CalculadoraPagamento({ faixas, config }: { faixas: FaixaPagament
     }
   }
 
+  const entradaFormatada = (entradaCentavos / 100).toFixed(2).replace('.', ',');
+  const valorEntradaExibido = valorEntradaTexto ?? entradaFormatada;
+
   function handleValorEntradaTexto(texto: string) {
+    setValorEntradaTexto(texto);
     try {
       const novaEntradaCentavos = parseReaisParaCentavos(texto);
       if (totalCentavos > 0) {
@@ -41,6 +49,18 @@ export function CalculadoraPagamento({ faixas, config }: { faixas: FaixaPagament
     } catch {
       // ignora entradas parciais/inválidas enquanto o usuário digita
     }
+  }
+
+  function handleValorEntradaBlur() {
+    // Ao sair do campo, volta a exibir o valor canônico calculado (ex.: "1500" -> "1.500,00").
+    setValorEntradaTexto(null);
+  }
+
+  function handlePercentualEntradaSlider(valor: number) {
+    setPercentualEntrada(valor);
+    // O slider é a fonte da verdade nesse momento: descarta qualquer texto em edição no
+    // campo para que ele volte a refletir o valor calculado, mantendo a sincronia bidirecional.
+    setValorEntradaTexto(null);
   }
 
   const opcoesParcelamento =
@@ -78,8 +98,9 @@ export function CalculadoraPagamento({ faixas, config }: { faixas: FaixaPagament
             <input
               id="valor-entrada"
               placeholder="R$ 0,00"
-              value={(entradaCentavos / 100).toFixed(2).replace('.', ',')}
+              value={valorEntradaExibido}
               onChange={(e) => handleValorEntradaTexto(e.target.value)}
+              onBlur={handleValorEntradaBlur}
               className="mt-1 w-full rounded border px-2 py-1"
             />
             <input
@@ -88,7 +109,7 @@ export function CalculadoraPagamento({ faixas, config }: { faixas: FaixaPagament
               min={percentualMinimo}
               max={100}
               value={percentualClamped}
-              onChange={(e) => setPercentualEntrada(Number(e.target.value))}
+              onChange={(e) => handlePercentualEntradaSlider(Number(e.target.value))}
               className="mt-2 w-full"
             />
             <p className="text-xs text-gray-500">Mínimo de {percentualMinimo}% do valor do serviço.</p>

@@ -45,4 +45,41 @@ describe('CalculadoraPagamento', () => {
     expect(screen.getByText(/R\$ 3\.467,50/)).toBeInTheDocument();
     expect(screen.queryByText(/Opções de pagamento do saldo/)).not.toBeInTheDocument();
   });
+
+  it('não reformata o campo "Valor de entrada" a cada tecla digitada e ainda assim atualiza saldo/entrada corretamente', () => {
+    render(<CalculadoraPagamento faixas={faixas} config={config} />);
+    digitarValorDoServico('3650,00');
+
+    const campoEntrada = screen.getByLabelText('Valor de entrada') as HTMLInputElement;
+
+    // Digita "1500,00" caractere a caractere. Antes da correção, valores parciais como "1"
+    // eram parseados com sucesso (parseReaisParaCentavos("1") === 100 centavos) e o campo era
+    // imediatamente reformatado para "1,00", sobrescrevendo o que o usuário estava digitando.
+    const sequenciaDigitada = ['1', '15', '150', '1500', '1500,', '1500,0', '1500,00'];
+    for (const valorParcial of sequenciaDigitada) {
+      fireEvent.change(campoEntrada, { target: { value: valorParcial } });
+      expect(campoEntrada.value).toBe(valorParcial);
+    }
+
+    // Ao fim da digitação, sem perder o foco, o campo ainda mostra exatamente o que foi digitado.
+    expect(campoEntrada.value).toBe('1500,00');
+
+    // O valor completo e válido já se refletiu corretamente no restante da calculadora.
+    expect(screen.getByText('R$ 1.500,00')).toBeInTheDocument();
+    expect(screen.getByText('R$ 2.150,00')).toBeInTheDocument();
+
+    // Ao perder o foco, o campo passa a exibir o valor canônico formatado (sincronizado de volta).
+    fireEvent.blur(campoEntrada);
+    expect(campoEntrada.value).toBe('1500,00');
+  });
+
+  it('o slider ainda sincroniza o campo "Valor de entrada" (sincronia bidirecional preservada)', () => {
+    render(<CalculadoraPagamento faixas={faixas} config={config} />);
+    digitarValorDoServico('3650,00');
+
+    const campoEntrada = screen.getByLabelText('Valor de entrada') as HTMLInputElement;
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '50' } });
+
+    expect(campoEntrada.value).toBe('1825,00');
+  });
 });
