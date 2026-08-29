@@ -8,7 +8,11 @@ export function formatarReais(centavos: number): string {
 }
 
 export function parseReaisParaCentavos(valor: string): number {
-  const normalizado = valor.replace(/\./g, '').replace(',', '.').trim();
+  const trimado = valor.trim();
+  if (trimado === '') {
+    throw new Error(`Valor inválido: ${valor}`);
+  }
+  const normalizado = trimado.replace(/\./g, '').replace(',', '.');
   const numero = Number(normalizado);
   if (Number.isNaN(numero)) {
     throw new Error(`Valor inválido: ${valor}`);

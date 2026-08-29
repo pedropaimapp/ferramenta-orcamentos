@@ -25,4 +25,12 @@ describe('parseReaisParaCentavos', () => {
   it('lança erro para texto que não é um número', () => {
     expect(() => parseReaisParaCentavos('abc')).toThrow();
   });
+
+  it('lança erro para string em branco', () => {
+    expect(() => parseReaisParaCentavos('')).toThrow();
+  });
+
+  it('lança erro para string com apenas espaços em branco', () => {
+    expect(() => parseReaisParaCentavos('   ')).toThrow();
+  });
 });
