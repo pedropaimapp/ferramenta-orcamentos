@@ -162,7 +162,7 @@ function tabelaItens(titulo, itens) {
       e(
         View,
         { style: styles.tabelaHeader },
-        e(Text, { style: [styles.tabelaHeaderTexto, styles.colDescricao] }, 'Descricao'),
+        e(Text, { style: [styles.tabelaHeaderTexto, styles.colDescricao] }, 'Descrição'),
         e(Text, { style: [styles.tabelaHeaderTexto, styles.colQtd] }, 'Qtd'),
         e(Text, { style: [styles.tabelaHeaderTexto, styles.colValor] }, 'Valor unit.'),
         e(Text, { style: [styles.tabelaHeaderTexto, styles.colValor] }, 'Subtotal')
@@ -183,7 +183,7 @@ function orcamentoPdfDocument({ oficina, consultorNome, orcamento, itens, totalC
       Page,
       { size: 'A4', style: styles.page },
 
-      // Cabecalho de marca.
+      // Cabeçalho de marca.
       e(
         View,
         { style: styles.headerBand },
@@ -202,14 +202,14 @@ function orcamentoPdfDocument({ oficina, consultorNome, orcamento, itens, totalC
         View,
         { style: styles.body },
 
-        e(Text, { style: styles.tituloDocumento }, 'Orcamento de servicos'),
+        e(Text, { style: styles.tituloDocumento }, 'Orçamento de serviços'),
         e(
           Text,
           { style: styles.subtituloDocumento },
-          `Emitido em ${formatarData(orcamento.createdAt)} - valido por ${orcamento.validadeDias} dias`
+          `Emitido em ${formatarData(orcamento.createdAt)} - válido por ${orcamento.validadeDias} dias`
         ),
 
-        // Dados do cliente / veiculo / consultor.
+        // Dados do cliente / veículo / consultor.
         e(
           View,
           { style: styles.infoRow },
@@ -222,7 +222,7 @@ function orcamentoPdfDocument({ oficina, consultorNome, orcamento, itens, totalC
           e(
             View,
             { style: styles.infoCard },
-            e(Text, { style: styles.infoLabel }, 'Veiculo'),
+            e(Text, { style: styles.infoLabel }, 'Veículo'),
             e(Text, { style: styles.infoValor }, orcamento.veiculoModelo),
             e(Text, { style: styles.infoValorSecundario }, `Placa ${orcamento.veiculoPlaca}`)
           ),
@@ -234,38 +234,38 @@ function orcamentoPdfDocument({ oficina, consultorNome, orcamento, itens, totalC
           )
         ),
 
-        tabelaItens('Pecas', pecas),
-        tabelaItens('Servicos', servicos),
+        tabelaItens('Peças', pecas),
+        tabelaItens('Serviços', servicos),
 
         e(
           View,
           { style: styles.totalRow },
-          e(Text, { style: styles.totalLabel }, 'Total do orcamento'),
+          e(Text, { style: styles.totalLabel }, 'Total do orçamento'),
           e(Text, { style: styles.totalValor }, formatarReais(totalCentavos))
         ),
 
-        // Condicoes de pagamento, em destaque.
+        // Condições de pagamento, em destaque.
         e(
           View,
           { style: styles.pagamentoCard },
-          e(Text, { style: styles.pagamentoTitulo }, 'Condicoes de pagamento'),
+          e(Text, { style: styles.pagamentoTitulo }, 'Condições de pagamento'),
           e(
             Text,
             { style: styles.pagamentoLinha },
-            e(Text, { style: styles.pagamentoDestaque }, `Entrada minima de ${formatarReais(entradaCentavos)}`),
-            ` + ${parcelas.length}x de ${formatarReais(parcelas[0])} no credito sem juros`
+            e(Text, { style: styles.pagamentoDestaque }, `Entrada mínima de ${formatarReais(entradaCentavos)}`),
+            ` + ${parcelas.length}x de ${formatarReais(parcelas[0])} no crédito sem juros`
           ),
           e(
             Text,
             { style: styles.pagamentoLinha },
-            'Desconto a vista no Pix/Debito: ',
+            'Desconto à vista no Pix/Débito: ',
             e(Text, { style: styles.pagamentoDestaque }, formatarReais(desconto.descontoCentavos)),
             ` -> total de ${formatarReais(desconto.valorComDescontoCentavos)}`
           ),
           e(
             Text,
             { style: [styles.pagamentoLinha, { marginBottom: 0 }] },
-            'Alternativa: Cartao Porto em ate ',
+            'Alternativa: Cartão Porto em até ',
             e(Text, { style: styles.pagamentoDestaque }, `${cartaoPorto.parcelas}x de ${formatarReais(cartaoPorto.valorParcelaCentavos)}`),
             ' sem juros'
           )
@@ -278,7 +278,7 @@ function orcamentoPdfDocument({ oficina, consultorNome, orcamento, itens, totalC
         e(
           Text,
           { style: styles.footerTexto },
-          `Orcamento valido por ${orcamento.validadeDias} dias a partir da emissao. Top Stop Centro Automotivo.`
+          `Orçamento válido por ${orcamento.validadeDias} dias a partir da emissão. Top Stop Centro Automotivo.`
         )
       )
     )
