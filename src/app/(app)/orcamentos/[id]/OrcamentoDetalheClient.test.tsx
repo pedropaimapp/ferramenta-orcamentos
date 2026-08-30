@@ -16,6 +16,12 @@ vi.mock('@/lib/orcamento/actions', () => ({
   removerOrcamento: (...args: unknown[]) => removerOrcamentoMock(...args),
 }));
 
+// O OrcamentoForm renderizado aqui dentro chama essa action ao adicionar um item
+// digitado manualmente; mockada para não carregar a cadeia real (guards/cookies).
+vi.mock('@/lib/catalogo/actions', () => ({
+  garantirItemNoCatalogo: vi.fn(),
+}));
+
 const orcamento: Orcamento = {
   id: 'o1',
   clienteNome: 'Maria',

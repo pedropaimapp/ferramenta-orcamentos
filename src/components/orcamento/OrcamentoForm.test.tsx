@@ -1,8 +1,15 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { OrcamentoForm } from './OrcamentoForm';
-import type { FaixaPagamento, ConfiguracaoPagamento } from '@/lib/types';
+import { garantirItemNoCatalogo } from '@/lib/catalogo/actions';
+import type { FaixaPagamento, ConfiguracaoPagamento, CatalogoItem } from '@/lib/types';
+
+vi.mock('@/lib/catalogo/actions', () => ({
+  garantirItemNoCatalogo: vi.fn(),
+}));
+
+const garantirItemNoCatalogoMock = vi.mocked(garantirItemNoCatalogo);
 
 const faixas: FaixaPagamento[] = [{ id: '1', valorMinCentavos: 0, valorMaxCentavos: null, parcelasSemJuros: 1 }];
 const config: ConfiguracaoPagamento = { percentualEntradaMinima: 0.3, percentualDescontoAVista: 0.05, cartaoPortoMaxParcelas: 6, cartaoPortoParcelaMinimaCentavos: 10000 };
@@ -13,6 +20,17 @@ function preencherItem() {
   fireEvent.change(screen.getByPlaceholderText('Valor unitário (R$)'), { target: { value: '100,00' } });
   fireEvent.click(screen.getByRole('button', { name: 'Adicionar item' }));
 }
+
+beforeEach(() => {
+  garantirItemNoCatalogoMock.mockReset();
+  garantirItemNoCatalogoMock.mockResolvedValue({
+    id: 'cat-novo',
+    descricao: 'Troca de óleo',
+    tipo: 'servico',
+    marcaCodigo: null,
+    valorPadraoCentavos: 10000,
+  });
+});
 
 describe('OrcamentoForm', () => {
   it('bloqueia salvar sem nenhum item', async () => {
@@ -81,5 +99,42 @@ describe('OrcamentoForm', () => {
     expect(dados.veiculoModelo).toBe('Onix');
     expect(dados.itens).toHaveLength(1);
     expect(dados.itens[0]).toMatchObject({ descricao: 'Troca de óleo', quantidade: 1, valorUnitarioCentavos: 10000 });
+  });
+
+  it('salva no catálogo um item digitado manualmente e o disponibiliza no formulário sem recarregar a página', async () => {
+    render(<OrcamentoForm catalogo={[]} faixas={faixas} config={config} aoSalvar={vi.fn()} />);
+
+    preencherItem();
+
+    await waitFor(() =>
+      expect(garantirItemNoCatalogoMock).toHaveBeenCalledWith({ descricao: 'Troca de óleo', tipo: 'peca', valorPadraoCentavos: 10000 })
+    );
+    // o item recém-criado no catálogo já vira sugestão para o próximo item adicionado
+    fireEvent.change(screen.getByPlaceholderText('Descrição'), { target: { value: 'Troca' } });
+    await waitFor(() => expect(screen.getAllByText('Troca de óleo').length).toBeGreaterThan(0));
+  });
+
+  it('não tenta salvar no catálogo um item selecionado a partir de uma sugestão existente', async () => {
+    const catalogo: CatalogoItem[] = [{ id: 'cat-1', descricao: 'Pastilha de freio', tipo: 'peca', marcaCodigo: null, valorPadraoCentavos: 15000 }];
+    render(<OrcamentoForm catalogo={catalogo} faixas={faixas} config={config} aoSalvar={vi.fn()} />);
+
+    fireEvent.change(screen.getByPlaceholderText('Descrição'), { target: { value: 'Pastilha' } });
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Pastilha de freio' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Adicionar item' }));
+
+    expect(garantirItemNoCatalogoMock).not.toHaveBeenCalled();
+  });
+
+  it('permite editar um item já adicionado através da tabela', async () => {
+    render(<OrcamentoForm catalogo={[]} faixas={faixas} config={config} aoSalvar={vi.fn()} />);
+
+    preencherItem();
+    await waitFor(() => expect(garantirItemNoCatalogoMock).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    fireEvent.change(screen.getByLabelText('Quantidade do item'), { target: { value: '4' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+
+    expect(within(screen.getByRole('table')).getByText('R$ 400,00')).toBeInTheDocument();
   });
 });

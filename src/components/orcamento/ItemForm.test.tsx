@@ -6,10 +6,11 @@ import type { CatalogoItem } from '@/lib/types';
 
 const catalogo: CatalogoItem[] = [
   { id: 'cat-1', descricao: 'Pastilha de freio', tipo: 'peca', marcaCodigo: 'BOSCH-123', valorPadraoCentavos: 15000 },
+  { id: 'cat-2', descricao: 'Troca de óleo', tipo: 'servico', marcaCodigo: null, valorPadraoCentavos: 10000 },
 ];
 
 describe('ItemForm', () => {
-  it('adiciona um item digitado manualmente', () => {
+  it('adiciona um item digitado manualmente (sem selecionar sugestão do catálogo)', () => {
     const onAdicionar = vi.fn();
     render(<ItemForm catalogo={[]} onAdicionar={onAdicionar} />);
 
@@ -21,14 +22,34 @@ describe('ItemForm', () => {
     expect(onAdicionar).toHaveBeenCalledWith({ catalogoItemId: null, descricao: 'Filtro de ar', tipo: 'peca', quantidade: 2, valorUnitarioCentavos: 5000 });
   });
 
-  it('preenche descrição, tipo e valor ao selecionar um item do catálogo', () => {
+  it('mostra sugestões do catálogo filtradas pelo tipo selecionado enquanto digita', () => {
+    render(<ItemForm catalogo={catalogo} onAdicionar={vi.fn()} />);
+
+    fireEvent.change(screen.getByPlaceholderText('Descrição'), { target: { value: 'o' } });
+
+    expect(screen.getByText('Pastilha de freio')).toBeInTheDocument();
+    expect(screen.queryByText('Troca de óleo')).not.toBeInTheDocument();
+  });
+
+  it('preenche descrição, tipo e valor ao selecionar uma sugestão do catálogo', () => {
     const onAdicionar = vi.fn();
     render(<ItemForm catalogo={catalogo} onAdicionar={onAdicionar} />);
 
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'cat-1' } });
+    fireEvent.change(screen.getByPlaceholderText('Descrição'), { target: { value: 'Pastilha' } });
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Pastilha de freio' }));
     fireEvent.click(screen.getByRole('button', { name: 'Adicionar item' }));
 
     expect(onAdicionar).toHaveBeenCalledWith({ catalogoItemId: 'cat-1', descricao: 'Pastilha de freio', tipo: 'peca', quantidade: 1, valorUnitarioCentavos: 15000 });
+  });
+
+  it('só sugere itens do tipo "Serviço" quando esse tipo está selecionado', () => {
+    render(<ItemForm catalogo={catalogo} onAdicionar={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Serviço' }));
+    fireEvent.change(screen.getByPlaceholderText('Descrição'), { target: { value: 'o' } });
+
+    expect(screen.getByText('Troca de óleo')).toBeInTheDocument();
+    expect(screen.queryByText('Pastilha de freio')).not.toBeInTheDocument();
   });
 
   it('mostra erro e não chama onAdicionar quando a quantidade é inválida', () => {
