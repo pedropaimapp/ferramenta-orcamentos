@@ -77,6 +77,11 @@ describe('OrcamentoDetalheClient', () => {
     render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />);
     expect(screen.getByRole('link', { name: 'Baixar PDF' })).toHaveAttribute('href', '/orcamentos/o1/pdf');
   });
+
+  it('mostra a data de criação do orçamento', () => {
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />);
+    expect(screen.getByText(`Criado em ${new Date(orcamento.createdAt).toLocaleDateString('pt-BR')}`)).toBeInTheDocument();
+  });
 });
 
 describe('excluir orçamento', () => {

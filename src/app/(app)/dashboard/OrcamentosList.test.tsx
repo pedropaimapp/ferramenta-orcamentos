@@ -15,8 +15,8 @@ vi.mock('@/lib/orcamento/actions', () => ({
 }));
 
 const orcamentos: Orcamento[] = [
-  { id: 'o1', clienteNome: 'Maria', clienteTelefone: '5511987654321', veiculoPlaca: 'ABC1D23', veiculoModelo: 'Onix', consultorId: 'c1', oficinaId: 'of1', status: 'rascunho', validadeDias: 7, createdAt: '', updatedAt: '' },
-  { id: 'o2', clienteNome: 'João', clienteTelefone: '5511999999999', veiculoPlaca: 'XYZ9K88', veiculoModelo: 'Gol', consultorId: 'c1', oficinaId: 'of1', status: 'enviado', validadeDias: 7, createdAt: '', updatedAt: '' },
+  { id: 'o1', clienteNome: 'Maria', clienteTelefone: '5511987654321', veiculoPlaca: 'ABC1D23', veiculoModelo: 'Onix', consultorId: 'c1', oficinaId: 'of1', status: 'rascunho', validadeDias: 7, createdAt: '2026-08-28T00:00:00Z', updatedAt: '' },
+  { id: 'o2', clienteNome: 'João', clienteTelefone: '5511999999999', veiculoPlaca: 'XYZ9K88', veiculoModelo: 'Gol', consultorId: 'c1', oficinaId: 'of1', status: 'enviado', validadeDias: 7, createdAt: '2026-08-29T00:00:00Z', updatedAt: '' },
 ];
 
 // A lista renderiza duas versões (cards no mobile, tabela no desktop) do
@@ -86,6 +86,17 @@ describe('OrcamentosList', () => {
     expect(cards.getByText('Maria')).toBeInTheDocument();
     expect(cards.getByText('João')).toBeInTheDocument();
   });
+
+  it('mostra a data de criação de cada orçamento, na tabela e nos cards', () => {
+    render(<OrcamentosList orcamentosIniciais={orcamentos} />);
+    const dataMaria = new Date(orcamentos[0].createdAt).toLocaleDateString('pt-BR');
+    const dataJoao = new Date(orcamentos[1].createdAt).toLocaleDateString('pt-BR');
+    expect(tabela().getByText(dataMaria)).toBeInTheDocument();
+    expect(tabela().getByText(dataJoao)).toBeInTheDocument();
+    const cards = within(screen.getByTestId('orcamentos-cards'));
+    expect(cards.getByText(dataMaria)).toBeInTheDocument();
+    expect(cards.getByText(dataJoao)).toBeInTheDocument();
+  });
 });
 
 describe('OrcamentosList (modo admin, com oficinas e consultores)', () => {
@@ -95,8 +106,8 @@ describe('OrcamentosList (modo admin, com oficinas e consultores)', () => {
   const consultorBia: Consultor = { id: 'c2', authUserId: 'a2', nome: 'Bia', login: 'bia@topstop.local', papel: 'consultor', oficinaIds: ['of2'], ativo: true };
 
   const orcamentosAdmin: Orcamento[] = [
-    { id: 'o1', clienteNome: 'Maria', clienteTelefone: '5511987654321', veiculoPlaca: 'ABC1D23', veiculoModelo: 'Onix', consultorId: 'c1', oficinaId: 'of1', status: 'rascunho', validadeDias: 7, createdAt: '', updatedAt: '' },
-    { id: 'o2', clienteNome: 'João', clienteTelefone: '5511999999999', veiculoPlaca: 'XYZ9K88', veiculoModelo: 'Gol', consultorId: 'c2', oficinaId: 'of2', status: 'enviado', validadeDias: 7, createdAt: '', updatedAt: '' },
+    { id: 'o1', clienteNome: 'Maria', clienteTelefone: '5511987654321', veiculoPlaca: 'ABC1D23', veiculoModelo: 'Onix', consultorId: 'c1', oficinaId: 'of1', status: 'rascunho', validadeDias: 7, createdAt: '2026-08-28T00:00:00Z', updatedAt: '' },
+    { id: 'o2', clienteNome: 'João', clienteTelefone: '5511999999999', veiculoPlaca: 'XYZ9K88', veiculoModelo: 'Gol', consultorId: 'c2', oficinaId: 'of2', status: 'enviado', validadeDias: 7, createdAt: '2026-08-29T00:00:00Z', updatedAt: '' },
   ];
 
   it('mostra as colunas Oficina e Consultor e os filtros correspondentes', () => {

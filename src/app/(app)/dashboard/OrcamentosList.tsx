@@ -122,6 +122,7 @@ export function OrcamentosList({
               <MobileCard key={o.id}>
                 <MobileCardHeader title={o.clienteNome} badge={<StatusBadge status={o.status} />} />
                 <MobileCardRow label="Placa" value={<span className="font-mono uppercase">{o.veiculoPlaca}</span>} />
+                <MobileCardRow label="Criado em" value={new Date(o.createdAt).toLocaleDateString('pt-BR')} />
                 {mostrarColunasAdmin && (
                   <>
                     <MobileCardRow label="Oficina" value={nomeOficinaPorId[o.oficinaId] ?? '—'} />
@@ -154,6 +155,7 @@ export function OrcamentosList({
                 <tr>
                   <th>Cliente</th>
                   <th>Placa</th>
+                  <th>Criado em</th>
                   {mostrarColunasAdmin && (
                     <>
                       <th>Oficina</th>
@@ -169,6 +171,7 @@ export function OrcamentosList({
                   <tr key={o.id}>
                     <td className="font-medium text-porto-black">{o.clienteNome}</td>
                     <td className="font-mono uppercase text-porto-gray">{o.veiculoPlaca}</td>
+                    <td className="text-porto-gray">{new Date(o.createdAt).toLocaleDateString('pt-BR')}</td>
                     {mostrarColunasAdmin && (
                       <>
                         <td>{nomeOficinaPorId[o.oficinaId] ?? '—'}</td>
