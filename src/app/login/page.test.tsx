@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import LoginPage from './page';
+import { LoginForm } from './LoginForm';
 
 const pushMock = vi.fn();
 const refreshMock = vi.fn();
@@ -12,7 +12,7 @@ vi.mock('@/lib/supabase/client', () => ({
   createBrowserClient: () => ({ auth: { signInWithPassword: signInWithPasswordMock } }),
 }));
 
-describe('LoginPage', () => {
+describe('LoginForm', () => {
   beforeEach(() => {
     pushMock.mockReset();
     signInWithPasswordMock.mockReset();
@@ -20,7 +20,7 @@ describe('LoginPage', () => {
 
   it('mostra uma mensagem genérica quando o login falha', async () => {
     signInWithPasswordMock.mockResolvedValue({ error: { message: 'Invalid login credentials' } });
-    render(<LoginPage />);
+    render(<LoginForm />);
 
     fireEvent.change(screen.getByLabelText('Login'), { target: { value: 'joao@topstop.local' } });
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'errada' } });
@@ -32,7 +32,7 @@ describe('LoginPage', () => {
 
   it('redireciona para o dashboard quando o login dá certo', async () => {
     signInWithPasswordMock.mockResolvedValue({ error: null });
-    render(<LoginPage />);
+    render(<LoginForm />);
 
     fireEvent.change(screen.getByLabelText('Login'), { target: { value: 'joao@topstop.local' } });
     fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'correta' } });
