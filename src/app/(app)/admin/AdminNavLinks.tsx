@@ -21,6 +21,7 @@ export function AdminNavLinks() {
           <Link
             key={link.href}
             href={link.href}
+            prefetch={false}
             className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               active ? 'bg-porto-blue/10 text-porto-blueDark' : 'text-porto-gray hover:bg-porto-offwhite hover:text-porto-black'
             }`}
