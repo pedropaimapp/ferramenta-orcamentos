@@ -28,6 +28,11 @@ export function NavLinks({ papel, nome }: { papel: 'consultor' | 'admin'; nome: 
           <Link
             key={link.href}
             href={link.href}
+            // Desligado porque estes links ficam sempre visíveis no
+            // cabeçalho: o pré-carregamento do Next.js dispararia pedidos
+            // de fundo o tempo todo, que podem competir com a renovação do
+            // login feita pelo middleware.
+            prefetch={false}
             className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               isAtivo(link.href) ? 'bg-white/10 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'
             }`}
@@ -71,6 +76,7 @@ export function NavLinks({ papel, nome }: { papel: 'consultor' | 'admin'; nome: 
                 <Link
                   key={link.href}
                   href={link.href}
+                  prefetch={false}
                   onClick={() => setMenuAberto(false)}
                   className={`rounded-lg px-4 py-3 text-base font-medium transition-colors ${
                     isAtivo(link.href) ? 'bg-white/10 text-white' : 'text-white/75 hover:bg-white/5 hover:text-white'
