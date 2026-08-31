@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { OficinasManager } from './OficinasManager';
 
 vi.mock('@/lib/supabase/client', () => ({ createBrowserClient: () => ({}) }));
@@ -25,7 +25,7 @@ describe('OficinasManager', () => {
 
   it('lista as oficinas recebidas', () => {
     render(<OficinasManager oficinasIniciais={[oficinaExistente]} />);
-    expect(screen.getByText('Top Stop Centro')).toBeInTheDocument();
+    expect(within(screen.getByTestId('oficinas-tabela')).getByText('Top Stop Centro')).toBeInTheDocument();
   });
 
   it('cria uma nova oficina e adiciona à lista', async () => {
@@ -37,7 +37,7 @@ describe('OficinasManager', () => {
     fireEvent.change(screen.getByPlaceholderText('Telefone'), { target: { value: '11888888888' } });
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
 
-    await waitFor(() => expect(screen.getByText('Top Stop Norte')).toBeInTheDocument());
+    await waitFor(() => expect(within(screen.getByTestId('oficinas-tabela')).getByText('Top Stop Norte')).toBeInTheDocument());
     expect(enviarLogoOficinaMock).not.toHaveBeenCalled();
   });
 

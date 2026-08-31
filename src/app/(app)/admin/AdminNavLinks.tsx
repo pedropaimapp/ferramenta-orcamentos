@@ -9,7 +9,6 @@ const LINKS = [
   { href: '/admin/consultores', label: 'Consultores' },
   { href: '/admin/catalogo', label: 'Catálogo' },
   { href: '/admin/pagamento', label: 'Pagamento' },
-  { href: '/admin/orcamentos', label: 'Orçamentos' },
 ];
 
 export function AdminNavLinks() {

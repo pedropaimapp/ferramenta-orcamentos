@@ -5,3 +5,5 @@ tsconfig.tsbuildinfo
 .claude/settings.local.json
 .vercel
 .env*
+
+.superpowers/

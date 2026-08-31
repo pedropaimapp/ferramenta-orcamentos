@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { OrcamentoDetalheClient } from './OrcamentoDetalheClient';
 import type { Orcamento, OrcamentoItem, FaixaPagamento, ConfiguracaoPagamento } from '@/lib/types';
 
@@ -52,7 +52,7 @@ describe('OrcamentoDetalheClient', () => {
   it('pré-carrega o formulário com os dados existentes', () => {
     render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />);
     expect(screen.getByDisplayValue('Maria')).toBeInTheDocument();
-    expect(screen.getByText('Troca de óleo')).toBeInTheDocument();
+    expect(within(screen.getByTestId('itens-tabela')).getByText('Troca de óleo')).toBeInTheDocument();
   });
 
   it('muda o status do orçamento', async () => {
@@ -109,7 +109,11 @@ describe('excluir orçamento', () => {
 });
 
 describe('envio por WhatsApp', () => {
-  it('abre o link do WhatsApp com a mensagem formatada', () => {
+  beforeEach(() => {
+    mudarStatusOrcamentoMock.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('abre o link do WhatsApp com a mensagem formatada', async () => {
     const openMock = vi.fn();
     vi.stubGlobal('open', openMock);
 
@@ -124,6 +128,7 @@ describe('envio por WhatsApp', () => {
     expect(url).toContain('https://wa.me/5511987654321');
     expect(decodeURIComponent(url)).toContain('Troca de óleo');
 
+    await waitFor(() => expect(mudarStatusOrcamentoMock).toHaveBeenCalledWith('o1', 'enviado'));
     vi.unstubAllGlobals();
   });
 
@@ -143,5 +148,70 @@ describe('envio por WhatsApp', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enviar por WhatsApp' }));
 
     expect(screen.getByRole('alert')).toHaveTextContent('Telefone inválido');
+  });
+
+  it('muda o status para Enviado automaticamente ao enviar por WhatsApp um orçamento em Rascunho', async () => {
+    vi.stubGlobal('open', vi.fn());
+    render(
+      <OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar por WhatsApp' }));
+
+    await waitFor(() => expect(screen.getByLabelText('Status')).toHaveValue('enviado'));
+    vi.unstubAllGlobals();
+  });
+
+  it('não muda o status ao reenviar por WhatsApp um orçamento já Aprovado', async () => {
+    vi.stubGlobal('open', vi.fn());
+    render(
+      <OrcamentoDetalheClient
+        orcamento={{ ...orcamento, status: 'aprovado' }}
+        itens={itens}
+        catalogo={[]}
+        faixas={faixas}
+        config={config}
+        oficinaNome="Top Stop Centro"
+        consultorNome="Ana"
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar por WhatsApp' }));
+
+    await waitFor(() => expect(vi.mocked(window.open)).toHaveBeenCalled());
+    expect(mudarStatusOrcamentoMock).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Status')).toHaveValue('aprovado');
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('botões de atalho Aprovado/Recusado', () => {
+  beforeEach(() => {
+    mudarStatusOrcamentoMock.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('não aparecem quando o orçamento está em Rascunho', () => {
+    render(<OrcamentoDetalheClient orcamento={orcamento} itens={itens} catalogo={[]} faixas={faixas} config={config} oficinaNome="Top Stop Centro" consultorNome="Ana" />);
+    expect(screen.queryByRole('button', { name: 'Aprovado' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Recusado' })).not.toBeInTheDocument();
+  });
+
+  it('aparecem e mudam o status quando o orçamento está Enviado', async () => {
+    render(
+      <OrcamentoDetalheClient
+        orcamento={{ ...orcamento, status: 'enviado' }}
+        itens={itens}
+        catalogo={[]}
+        faixas={faixas}
+        config={config}
+        oficinaNome="Top Stop Centro"
+        consultorNome="Ana"
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aprovado' }));
+
+    await waitFor(() => expect(mudarStatusOrcamentoMock).toHaveBeenCalledWith('o1', 'aprovado'));
+    expect(screen.getByLabelText('Status')).toHaveValue('aprovado');
   });
 });

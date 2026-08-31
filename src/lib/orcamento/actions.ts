@@ -67,5 +67,4 @@ export async function removerOrcamento(id: string): Promise<void> {
   const supabase = await createServerClient();
   await removerOrcamentoDb(supabase, id);
   revalidatePath('/dashboard');
-  revalidatePath('/admin/orcamentos');
 }

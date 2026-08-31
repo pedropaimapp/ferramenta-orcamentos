@@ -1,6 +1,6 @@
 import React from 'react';
 
-const cardClasses = 'rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-900/[0.02]';
+const cardClasses = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/[0.02] sm:p-5';
 
 type CardDivProps = { as?: 'div' } & React.HTMLAttributes<HTMLDivElement>;
 type CardFormProps = { as: 'form' } & React.FormHTMLAttributes<HTMLFormElement>;

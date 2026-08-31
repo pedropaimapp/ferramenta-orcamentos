@@ -34,7 +34,8 @@ describe('ConsultoresManager', () => {
 
   it('mostra os nomes das oficinas vinculadas de cada consultor na listagem', () => {
     render(<ConsultoresManager consultoresIniciais={[consultorExistente]} oficinas={[oficinaCentro, oficinaNorte]} />);
-    const linha = screen.getByText('João').closest('tr')!;
+    const tabela = within(screen.getByTestId('consultores-tabela'));
+    const linha = tabela.getByText('João').closest('tr')!;
     expect(within(linha).getByText('Top Stop Centro')).toBeInTheDocument();
   });
 
@@ -88,7 +89,7 @@ describe('ConsultoresManager', () => {
     atualizarConsultorMock.mockResolvedValue(undefined);
     render(<ConsultoresManager consultoresIniciais={[consultorExistente]} oficinas={[oficinaCentro, oficinaNorte]} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
+    fireEvent.click(within(screen.getByTestId('consultores-tabela')).getByRole('button', { name: 'Editar' }));
 
     const checkboxCentro = screen.getByLabelText('Top Stop Centro') as HTMLInputElement;
     const checkboxNorte = screen.getByLabelText('Top Stop Norte') as HTMLInputElement;

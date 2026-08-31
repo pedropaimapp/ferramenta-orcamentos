@@ -131,10 +131,11 @@ describe('OrcamentoForm', () => {
     preencherItem();
     await waitFor(() => expect(garantirItemNoCatalogoMock).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
-    fireEvent.change(screen.getByLabelText('Quantidade do item'), { target: { value: '4' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }));
+    const tabela = within(screen.getByTestId('itens-tabela'));
+    fireEvent.click(tabela.getByRole('button', { name: 'Editar' }));
+    fireEvent.change(tabela.getByLabelText('Quantidade do item'), { target: { value: '4' } });
+    fireEvent.click(tabela.getByRole('button', { name: 'Salvar' }));
 
-    expect(within(screen.getByRole('table')).getByText('R$ 400,00')).toBeInTheDocument();
+    expect(tabela.getByText('R$ 400,00')).toBeInTheDocument();
   });
 });

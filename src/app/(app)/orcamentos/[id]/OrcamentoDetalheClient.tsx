@@ -14,7 +14,7 @@ import { Card } from '@/components/ui/Card';
 import { Field, Select } from '@/components/ui/Input';
 import { Button, buttonClasses } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
-import { STATUS_LABEL } from '@/components/ui/Badge';
+import { STATUS_LABEL, StatusBadge } from '@/components/ui/Badge';
 
 export function OrcamentoDetalheClient({
   orcamento,
@@ -39,7 +39,7 @@ export function OrcamentoDetalheClient({
   const [erroWhatsApp, setErroWhatsApp] = useState<string | null>(null);
   const [erroExcluir, setErroExcluir] = useState<string | null>(null);
 
-  function enviarPorWhatsApp() {
+  async function enviarPorWhatsApp() {
     setErroWhatsApp(null);
     try {
       const totalCentavos = calcularTotalItens(itens);
@@ -71,6 +71,13 @@ export function OrcamentoDetalheClient({
       });
 
       window.open(montarLinkWhatsApp(orcamento.clienteTelefone, mensagem), '_blank');
+
+      // Envio pelo WhatsApp marca o orçamento como "Enviado" — só quando ainda
+      // está em Rascunho, pra não desfazer uma aprovação/recusa já registrada
+      // caso alguém reenvie uma cópia depois.
+      if (status === 'rascunho') {
+        await alterarStatus('enviado');
+      }
     } catch (err) {
       setErroWhatsApp(err instanceof Error ? err.message : 'Erro desconhecido');
     }
@@ -119,15 +126,28 @@ export function OrcamentoDetalheClient({
   return (
     <div className="space-y-6">
       <Card className="flex flex-wrap items-end justify-between gap-4">
-        <Field label="Status" htmlFor="status" className="max-w-xs">
-          <Select id="status" value={status} onChange={(e) => alterarStatus(e.target.value as StatusOrcamento)}>
-            {Object.entries(STATUS_LABEL).map(([valor, rotulo]) => (
-              <option key={valor} value={valor}>
-                {rotulo}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <div className="flex flex-wrap items-end gap-3">
+          <Field label="Status" htmlFor="status" className="max-w-xs">
+            <Select id="status" value={status} onChange={(e) => alterarStatus(e.target.value as StatusOrcamento)}>
+              {Object.entries(STATUS_LABEL).map(([valor, rotulo]) => (
+                <option key={valor} value={valor}>
+                  {rotulo}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <StatusBadge status={status} />
+          {status === 'enviado' && (
+            <div className="flex gap-2">
+              <Button type="button" size="sm" variant="success" onClick={() => alterarStatus('aprovado')}>
+                Aprovado
+              </Button>
+              <Button type="button" size="sm" variant="danger" onClick={() => alterarStatus('recusado')}>
+                Recusado
+              </Button>
+            </div>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2">
           <Link href={`/orcamentos/${orcamento.id}/pdf`} target="_blank" rel="noreferrer" className={buttonClasses('outline')}>
             Baixar PDF
