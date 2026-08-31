@@ -137,6 +137,7 @@ export function OrcamentoDetalheClient({
             </Select>
           </Field>
           <StatusBadge status={status} />
+          <span className="text-sm text-porto-gray">Criado em {new Date(orcamento.createdAt).toLocaleDateString('pt-BR')}</span>
           {status === 'enviado' && (
             <div className="flex gap-2">
               <Button type="button" size="sm" variant="success" onClick={() => alterarStatus('aprovado')}>
