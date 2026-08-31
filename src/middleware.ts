@@ -27,6 +27,12 @@ export async function middleware(request: NextRequest) {
   // cookies onto the response above via `setAll`.
   await supabase.auth.getUser();
 
+  // Recomendação da própria Supabase para quem hospeda em CDN/edge (Vercel
+  // incluso): sem isso, uma resposta desta rota — com o Set-Cookie da
+  // renovação do login — pode acabar em cache e ser servida depois com um
+  // cookie de sessão desatualizado.
+  response.headers.set('Cache-Control', 'private, no-store');
+
   return response;
 }
 
