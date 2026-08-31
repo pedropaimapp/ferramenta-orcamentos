@@ -1,7 +1,7 @@
 import React from 'react';
 import { Spinner } from './Spinner';
 
-export type ButtonVariant = 'primary' | 'dark' | 'outline' | 'ghost' | 'danger' | 'link';
+export type ButtonVariant = 'primary' | 'dark' | 'outline' | 'ghost' | 'danger' | 'success' | 'link';
 export type ButtonSize = 'sm' | 'md';
 
 const base =
@@ -13,12 +13,15 @@ const variants: Record<ButtonVariant, string> = {
   outline: 'border border-slate-300 bg-white text-porto-black hover:border-porto-blue hover:text-porto-blue',
   ghost: 'text-porto-black hover:bg-porto-offwhite',
   danger: 'border border-rose-200 bg-white text-rose-600 hover:border-rose-300 hover:bg-rose-50',
+  success: 'border border-emerald-200 bg-white text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50',
   link: 'text-porto-blue hover:underline font-medium p-0 h-auto',
 };
 
+// py-2.5 (em vez de py-2) dá uma área de toque mais confortável no mobile,
+// mantendo o botão discreto no desktop.
 const sizes: Record<ButtonSize, string> = {
   sm: 'px-3 py-1.5 text-xs',
-  md: 'px-4 py-2 text-sm',
+  md: 'px-4 py-2.5 text-sm',
 };
 
 export function buttonClasses(variant: ButtonVariant = 'primary', size: ButtonSize = 'md', className = '') {

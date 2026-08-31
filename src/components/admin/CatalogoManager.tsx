@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Table, EmptyState } from '@/components/ui/Table';
+import { MobileCard, MobileCardHeader, MobileCardRow, MobileCardActions } from '@/components/ui/MobileCard';
 
 export function CatalogoManager({ itensIniciais }: { itensIniciais: CatalogoItem[] }) {
   const [itens, setItens] = useState(itensIniciais);
@@ -66,39 +67,66 @@ export function CatalogoManager({ itensIniciais }: { itensIniciais: CatalogoItem
       {itens.length === 0 ? (
         <EmptyState>Nenhum item cadastrado ainda.</EmptyState>
       ) : (
-        <Table>
-          <thead>
-            <tr>
-              <th>Descrição</th>
-              <th>Tipo</th>
-              <th>Marca/Código</th>
-              <th>Valor</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          {/* Mobile (<640px): um card por item. */}
+          <div className="space-y-3 sm:hidden" data-testid="catalogo-cards">
             {itens.map((i) => (
-              <tr key={i.id}>
-                <td className="font-medium text-porto-black">{i.descricao}</td>
-                <td>
-                  <Badge tone={i.tipo === 'peca' ? 'info' : 'neutral'}>{i.tipo === 'peca' ? 'Peça' : 'Serviço'}</Badge>
-                </td>
-                <td>{i.marcaCodigo}</td>
-                <td>{formatarReais(i.valorPadraoCentavos)}</td>
-                <td>
-                  <div className="flex items-center gap-4">
-                    <button type="button" onClick={() => iniciarEdicao(i)} className="text-sm font-medium text-porto-blue hover:underline">
-                      Editar
-                    </button>
-                    <button type="button" onClick={() => remover(i.id)} className="text-sm font-medium text-rose-600 hover:underline">
-                      Remover
-                    </button>
-                  </div>
-                </td>
-              </tr>
+              <MobileCard key={i.id}>
+                <MobileCardHeader
+                  title={i.descricao}
+                  badge={<Badge tone={i.tipo === 'peca' ? 'info' : 'neutral'}>{i.tipo === 'peca' ? 'Peça' : 'Serviço'}</Badge>}
+                />
+                {i.marcaCodigo && <MobileCardRow label="Marca/Código" value={i.marcaCodigo} />}
+                <MobileCardRow label="Valor" value={formatarReais(i.valorPadraoCentavos)} />
+                <MobileCardActions>
+                  <button type="button" onClick={() => iniciarEdicao(i)} className="text-sm font-medium text-porto-blue hover:underline">
+                    Editar
+                  </button>
+                  <button type="button" onClick={() => remover(i.id)} className="text-sm font-medium text-rose-600 hover:underline">
+                    Remover
+                  </button>
+                </MobileCardActions>
+              </MobileCard>
             ))}
-          </tbody>
-        </Table>
+          </div>
+
+          {/* Desktop (≥640px): tabela normal. */}
+          <div className="hidden sm:block" data-testid="catalogo-tabela">
+            <Table>
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Tipo</th>
+                  <th>Marca/Código</th>
+                  <th>Valor</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {itens.map((i) => (
+                  <tr key={i.id}>
+                    <td className="font-medium text-porto-black">{i.descricao}</td>
+                    <td>
+                      <Badge tone={i.tipo === 'peca' ? 'info' : 'neutral'}>{i.tipo === 'peca' ? 'Peça' : 'Serviço'}</Badge>
+                    </td>
+                    <td>{i.marcaCodigo}</td>
+                    <td>{formatarReais(i.valorPadraoCentavos)}</td>
+                    <td>
+                      <div className="flex items-center gap-4">
+                        <button type="button" onClick={() => iniciarEdicao(i)} className="text-sm font-medium text-porto-blue hover:underline">
+                          Editar
+                        </button>
+                        <button type="button" onClick={() => remover(i.id)} className="text-sm font-medium text-rose-600 hover:underline">
+                          Remover
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        </>
       )}
 
       <Card as="form" onSubmit={salvar} className="max-w-xl space-y-3">

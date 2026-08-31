@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Table, EmptyState } from '@/components/ui/Table';
+import { MobileCard, MobileCardHeader, MobileCardRow, MobileCardActions } from '@/components/ui/MobileCard';
 
 export function ConsultoresManager({
   consultoresIniciais,
@@ -74,43 +75,76 @@ export function ConsultoresManager({
       {consultores.length === 0 ? (
         <EmptyState>Nenhum consultor cadastrado ainda.</EmptyState>
       ) : (
-        <Table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Login</th>
-              <th>Papel</th>
-              <th>Oficinas</th>
-              <th>Status</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          {/* Mobile (<640px): um card por consultor. */}
+          <div className="space-y-3 sm:hidden" data-testid="consultores-cards">
             {consultores.map((c) => (
-              <tr key={c.id}>
-                <td className="font-medium text-porto-black">{c.nome}</td>
-                <td className="text-porto-gray">{c.login}</td>
-                <td className="capitalize">{c.papel}</td>
-                <td>{c.oficinaIds.length > 0 ? c.oficinaIds.map((id) => nomeOficinasPorId[id] ?? '—').join(', ') : '—'}</td>
-                <td>
-                  <Badge tone={c.ativo ? 'success' : 'neutral'}>{c.ativo ? 'Ativo' : 'Inativo'}</Badge>
-                </td>
-                <td>
-                  <div className="flex items-center gap-4">
-                    <button type="button" onClick={() => iniciarEdicao(c)} className="text-sm font-medium text-porto-blue hover:underline">
-                      Editar
+              <MobileCard key={c.id}>
+                <MobileCardHeader
+                  title={c.nome}
+                  badge={<Badge tone={c.ativo ? 'success' : 'neutral'}>{c.ativo ? 'Ativo' : 'Inativo'}</Badge>}
+                />
+                <MobileCardRow label="Login" value={c.login} />
+                <MobileCardRow label="Papel" value={<span className="capitalize">{c.papel}</span>} />
+                <MobileCardRow
+                  label="Oficinas"
+                  value={c.oficinaIds.length > 0 ? c.oficinaIds.map((id) => nomeOficinasPorId[id] ?? '—').join(', ') : '—'}
+                />
+                <MobileCardActions>
+                  <button type="button" onClick={() => iniciarEdicao(c)} className="text-sm font-medium text-porto-blue hover:underline">
+                    Editar
+                  </button>
+                  {c.ativo && (
+                    <button type="button" onClick={() => desativar(c.id)} className="text-sm font-medium text-rose-600 hover:underline">
+                      Desativar
                     </button>
-                    {c.ativo && (
-                      <button type="button" onClick={() => desativar(c.id)} className="text-sm font-medium text-rose-600 hover:underline">
-                        Desativar
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
+                  )}
+                </MobileCardActions>
+              </MobileCard>
             ))}
-          </tbody>
-        </Table>
+          </div>
+
+          {/* Desktop (≥640px): tabela normal. */}
+          <div className="hidden sm:block" data-testid="consultores-tabela">
+            <Table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Login</th>
+                  <th>Papel</th>
+                  <th>Oficinas</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {consultores.map((c) => (
+                  <tr key={c.id}>
+                    <td className="font-medium text-porto-black">{c.nome}</td>
+                    <td className="text-porto-gray">{c.login}</td>
+                    <td className="capitalize">{c.papel}</td>
+                    <td>{c.oficinaIds.length > 0 ? c.oficinaIds.map((id) => nomeOficinasPorId[id] ?? '—').join(', ') : '—'}</td>
+                    <td>
+                      <Badge tone={c.ativo ? 'success' : 'neutral'}>{c.ativo ? 'Ativo' : 'Inativo'}</Badge>
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-4">
+                        <button type="button" onClick={() => iniciarEdicao(c)} className="text-sm font-medium text-porto-blue hover:underline">
+                          Editar
+                        </button>
+                        {c.ativo && (
+                          <button type="button" onClick={() => desativar(c.id)} className="text-sm font-medium text-rose-600 hover:underline">
+                            Desativar
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        </>
       )}
 
       <Card as="form" onSubmit={salvar} className="max-w-xl space-y-3">

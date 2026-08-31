@@ -9,6 +9,7 @@ import { Field, Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { Table, EmptyState } from '@/components/ui/Table';
+import { MobileCard, MobileCardHeader, MobileCardRow, MobileCardActions } from '@/components/ui/MobileCard';
 
 export function OficinasManager({ oficinasIniciais }: { oficinasIniciais: Oficina[] }) {
   const [oficinas, setOficinas] = useState(oficinasIniciais);
@@ -59,30 +60,51 @@ export function OficinasManager({ oficinasIniciais }: { oficinasIniciais: Oficin
       {oficinas.length === 0 ? (
         <EmptyState>Nenhuma oficina cadastrada ainda.</EmptyState>
       ) : (
-        <Table>
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Endereço</th>
-              <th>Telefone</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
+        <>
+          {/* Mobile (<640px): um card por oficina. */}
+          <div className="space-y-3 sm:hidden" data-testid="oficinas-cards">
             {oficinas.map((o) => (
-              <tr key={o.id}>
-                <td className="font-medium text-porto-black">{o.nome}</td>
-                <td className="text-porto-gray">{o.endereco}</td>
-                <td>{o.telefone}</td>
-                <td>
+              <MobileCard key={o.id}>
+                <MobileCardHeader title={o.nome} />
+                <MobileCardRow label="Endereço" value={o.endereco} />
+                <MobileCardRow label="Telefone" value={o.telefone} />
+                <MobileCardActions>
                   <button type="button" onClick={() => iniciarEdicao(o)} className="text-sm font-medium text-porto-blue hover:underline">
                     Editar
                   </button>
-                </td>
-              </tr>
+                </MobileCardActions>
+              </MobileCard>
             ))}
-          </tbody>
-        </Table>
+          </div>
+
+          {/* Desktop (≥640px): tabela normal. */}
+          <div className="hidden sm:block" data-testid="oficinas-tabela">
+            <Table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Endereço</th>
+                  <th>Telefone</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {oficinas.map((o) => (
+                  <tr key={o.id}>
+                    <td className="font-medium text-porto-black">{o.nome}</td>
+                    <td className="text-porto-gray">{o.endereco}</td>
+                    <td>{o.telefone}</td>
+                    <td>
+                      <button type="button" onClick={() => iniciarEdicao(o)} className="text-sm font-medium text-porto-blue hover:underline">
+                        Editar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        </>
       )}
 
       <Card as="form" onSubmit={salvar} className="max-w-xl space-y-3">

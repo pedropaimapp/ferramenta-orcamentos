@@ -10,6 +10,7 @@ import { Field, Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { Table, EmptyState } from '@/components/ui/Table';
+import { MobileCard, MobileCardHeader, MobileCardRow, MobileCardActions } from '@/components/ui/MobileCard';
 
 export function PagamentoManager({
   faixasIniciais,
@@ -116,35 +117,58 @@ export function PagamentoManager({
         {faixas.length === 0 ? (
           <EmptyState>Nenhuma faixa cadastrada ainda.</EmptyState>
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <th>De</th>
-                <th>Até</th>
-                <th>Parcelas sem juros</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Mobile (<640px): um card por faixa. */}
+            <div className="space-y-3 sm:hidden" data-testid="faixas-cards">
               {faixas.map((f) => (
-                <tr key={f.id}>
-                  <td className="font-medium text-porto-black">{formatarReais(f.valorMinCentavos)}</td>
-                  <td>{f.valorMaxCentavos === null ? 'sem limite' : formatarReais(f.valorMaxCentavos)}</td>
-                  <td>{f.parcelasSemJuros}x</td>
-                  <td>
-                    <div className="flex items-center gap-4">
-                      <button type="button" onClick={() => iniciarEdicaoFaixa(f)} className="text-sm font-medium text-porto-blue hover:underline">
-                        Editar
-                      </button>
-                      <button type="button" onClick={() => removerFaixaSelecionada(f.id)} className="text-sm font-medium text-rose-600 hover:underline">
-                        Remover
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                <MobileCard key={f.id}>
+                  <MobileCardHeader title={`${formatarReais(f.valorMinCentavos)} – ${f.valorMaxCentavos === null ? 'sem limite' : formatarReais(f.valorMaxCentavos)}`} />
+                  <MobileCardRow label="Parcelas sem juros" value={`${f.parcelasSemJuros}x`} />
+                  <MobileCardActions>
+                    <button type="button" onClick={() => iniciarEdicaoFaixa(f)} className="text-sm font-medium text-porto-blue hover:underline">
+                      Editar
+                    </button>
+                    <button type="button" onClick={() => removerFaixaSelecionada(f.id)} className="text-sm font-medium text-rose-600 hover:underline">
+                      Remover
+                    </button>
+                  </MobileCardActions>
+                </MobileCard>
               ))}
-            </tbody>
-          </Table>
+            </div>
+
+            {/* Desktop (≥640px): tabela normal. */}
+            <div className="hidden sm:block" data-testid="faixas-tabela">
+              <Table>
+                <thead>
+                  <tr>
+                    <th>De</th>
+                    <th>Até</th>
+                    <th>Parcelas sem juros</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {faixas.map((f) => (
+                    <tr key={f.id}>
+                      <td className="font-medium text-porto-black">{formatarReais(f.valorMinCentavos)}</td>
+                      <td>{f.valorMaxCentavos === null ? 'sem limite' : formatarReais(f.valorMaxCentavos)}</td>
+                      <td>{f.parcelasSemJuros}x</td>
+                      <td>
+                        <div className="flex items-center gap-4">
+                          <button type="button" onClick={() => iniciarEdicaoFaixa(f)} className="text-sm font-medium text-porto-blue hover:underline">
+                            Editar
+                          </button>
+                          <button type="button" onClick={() => removerFaixaSelecionada(f.id)} className="text-sm font-medium text-rose-600 hover:underline">
+                            Remover
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
+          </>
         )}
 
         <Card as="form" onSubmit={salvarFaixa} className="max-w-xl space-y-3">
